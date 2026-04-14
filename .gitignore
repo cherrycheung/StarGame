@@ -1,0 +1,17 @@
+.DS_Store
+
+# Xcode user data
+xcuserdata/
+*.xcuserstate
+
+# Build products
+DerivedData/
+build/
+
+# Swift Package Manager
+.build/
+
+# App archives
+*.ipa
+*.dSYM.zip
+*.dSYM

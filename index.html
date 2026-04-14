@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Star Battle Lite</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Puzzle MVP</p>
+          <h1>Star Battle Lite</h1>
+          <p class="subtitle">
+            Place one star in each row, column, and region. Stars cannot touch,
+            even diagonally.
+          </p>
+        </div>
+        <div class="hero-card">
+          <p class="hero-stat-label">Mode</p>
+          <p class="hero-stat-value" id="modeLabel">1 star per row/column/region</p>
+          <button id="newGameButton" class="primary-button">New Puzzle</button>
+        </div>
+      </header>
+
+      <aside class="ad-banner" aria-label="Advertisement">
+        <span>Ad Space</span>
+        <strong>Leaderboard 728 x 90</strong>
+        <small>Replace with AdMob, AdSense, or another ad provider later.</small>
+      </aside>
+
+      <main class="game-layout">
+        <section class="game-panel">
+          <div class="panel-header">
+            <div>
+              <p class="panel-label">Current Puzzle</p>
+              <h2 id="puzzleName">Loading...</h2>
+            </div>
+            <div class="status-pill" id="statusPill">In progress</div>
+          </div>
+
+          <div class="controls">
+            <button id="markModeButton" class="secondary-button">Mode: Star</button>
+            <button id="resetButton" class="secondary-button">Reset Board</button>
+            <button id="checkButton" class="secondary-button">Check Progress</button>
+          </div>
+
+          <div class="board-wrap">
+            <div id="board" class="board" role="grid" aria-label="Star Battle board"></div>
+          </div>
+
+          <p id="message" class="message">
+            Tap cells to place stars. Switch mode to add X marks for notes.
+          </p>
+        </section>
+
+        <aside class="sidebar">
+          <section class="card">
+            <h3>Rules</h3>
+            <ul>
+              <li>Each row must contain exactly one star.</li>
+              <li>Each column must contain exactly one star.</li>
+              <li>Each region must contain exactly one star.</li>
+              <li>Stars cannot touch horizontally, vertically, or diagonally.</li>
+            </ul>
+          </section>
+
+          <section class="card">
+            <h3>Progress</h3>
+            <dl class="stats">
+              <div>
+                <dt>Placed stars</dt>
+                <dd id="starCount">0</dd>
+              </div>
+              <div>
+                <dt>Expected</dt>
+                <dd id="targetCount">0</dd>
+              </div>
+              <div>
+                <dt>Notes</dt>
+                <dd id="markCount">0</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section class="ad-rail" aria-label="Advertisement">
+            <span>Ad Space</span>
+            <strong>Sidebar / Interstitial Placeholder</strong>
+            <small>Safe placeholder for monetization wiring later.</small>
+          </section>
+        </aside>
+      </main>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
