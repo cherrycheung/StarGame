@@ -1,71 +1,226 @@
 import SwiftUI
 
+private enum AppScreen {
+    case home
+    case game
+}
+
+private enum StarMode: Int {
+    case one = 1
+    case two = 2
+
+    var title: String {
+        "\(rawValue) Star"
+    }
+
+    var subtitle: String {
+        switch self {
+        case .one:
+            return "Classic 6x6 starter board"
+        case .two:
+            return "Coming soon"
+        }
+    }
+
+    var isAvailable: Bool {
+        self == .one
+    }
+}
+
 struct ContentView: View {
     @StateObject private var viewModel = GameViewModel()
     @Environment(\.colorScheme) private var colorScheme
+    @State private var currentScreen: AppScreen = .home
+    @State private var selectedMode: StarMode = .one
+    @State private var selectedDifficulty: PuzzleDifficulty = .easy
+    @State private var showSettings = false
     @State private var showSolvedCelebration = false
 
     var body: some View {
         NavigationStack {
             GeometryReader { geometry in
-                VStack(alignment: .leading, spacing: 12) {
-                    header
-                    puzzleCard(availableWidth: geometry.size.width)
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .frame(width: geometry.size.width, height: geometry.size.height, alignment: .top)
-                .background(
+                ZStack {
                     LinearGradient(
                         colors: [palette.backgroundTop, palette.backgroundBottom],
                         startPoint: .top,
                         endPoint: .bottom
                     )
                     .ignoresSafeArea()
-                )
+
+                    switch currentScreen {
+                    case .home:
+                        homeScreen
+                    case .game:
+                        gameScreen(availableSize: geometry.size)
+                    }
+                }
             }
             .navigationBarHidden(true)
+            .sheet(isPresented: $showSettings) {
+                SettingsSheet(
+                    autoMarkEnabled: Binding(
+                        get: { viewModel.autoMarkEnabled },
+                        set: { viewModel.setAutoMarkEnabled($0) }
+                    )
+                )
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+            }
         }
     }
 
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .firstTextBaseline) {
-                Text("Star Battle Lite")
-                    .font(.system(size: 30, weight: .bold, design: .rounded))
+    private var homeScreen: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            Spacer(minLength: 0)
+
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Star Battle")
+                    .font(.system(size: 36, weight: .bold, design: .rounded))
                     .foregroundStyle(palette.headerText)
-                Spacer()
-                Text("1 star")
-                    .font(.footnote.weight(.semibold))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(palette.modeBadge, in: Capsule())
-                    .foregroundStyle(palette.headerText)
+                Text("Choose your mode and difficulty, then start a clean puzzle run.")
+                    .font(.subheadline)
+                    .foregroundStyle(palette.headerSubtext)
             }
 
-            Text("Tap once for X, tap twice for a star. Drag to sweep crosses.")
-                .font(.footnote)
-                .foregroundStyle(palette.headerSubtext)
+            VStack(spacing: 14) {
+                ForEach([StarMode.one, StarMode.two], id: \.rawValue) { mode in
+                    Button {
+                        guard mode.isAvailable else { return }
+                        selectedMode = mode
+                    } label: {
+                        HStack(spacing: 14) {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text(mode.title)
+                                    .font(.title3.weight(.bold))
+                                    .foregroundStyle(palette.headerText)
+                                Text(mode.subtitle)
+                                    .font(.subheadline)
+                                    .foregroundStyle(palette.bodySubtext)
+                            }
 
-            HStack {
-                Label("Auto X", systemImage: viewModel.autoMarkEnabled ? "checkmark.circle.fill" : "circle")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(palette.headerText)
-                Spacer()
-                Toggle("", isOn: Binding(
-                    get: { viewModel.autoMarkEnabled },
-                    set: { viewModel.setAutoMarkEnabled($0) }
-                ))
-                .labelsHidden()
-                .tint(.orange)
+                            Spacer()
+
+                            Image(systemName: mode.isAvailable ? "play.fill" : "clock")
+                                .font(.title3.weight(.semibold))
+                                .foregroundStyle(mode.isAvailable ? palette.star : palette.bodySubtext)
+                        }
+                        .padding(18)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(palette.cardBackground, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                .stroke(palette.headerBorder, lineWidth: 1)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!mode.isAvailable)
+                }
             }
+
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Difficulty")
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(palette.headerText)
+
+                HStack(spacing: 10) {
+                    ForEach(PuzzleDifficulty.allCases) { difficulty in
+                        let count = viewModel.availableDifficultyCounts[difficulty, default: 0]
+                        DifficultyCard(
+                            title: difficulty.title,
+                            count: count,
+                            isSelected: selectedDifficulty == difficulty,
+                            isEnabled: count > 0 && selectedMode.isAvailable
+                        ) {
+                            guard count > 0 else { return }
+                            selectedDifficulty = difficulty
+                        }
+                    }
+                }
+            }
+
+            Button {
+                viewModel.startNewSession(difficulty: selectedDifficulty)
+                currentScreen = .game
+            } label: {
+                Label("Start Game", systemImage: "play.fill")
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(palette.headerText)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+            }
+            .buttonStyle(.plain)
+            .glassEffect(.regular.interactive())
+            .disabled(viewModel.availableDifficultyCounts[selectedDifficulty, default: 0] == 0 || !selectedMode.isAvailable)
+
+            Button {
+                showSettings = true
+            } label: {
+                Label("Settings", systemImage: "gearshape.fill")
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(palette.headerText)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+            }
+            .buttonStyle(.plain)
+            .glassEffect(.regular.interactive())
+
+            Spacer(minLength: 0)
         }
-        .padding(16)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 24)
+    }
+
+    private func gameScreen(availableSize: CGSize) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            gameHeader
+            puzzleCard(availableWidth: availableSize.width)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .frame(width: availableSize.width, height: availableSize.height, alignment: .top)
+    }
+
+    private var gameHeader: some View {
+        HStack(spacing: 12) {
+            Button {
+                currentScreen = .home
+            } label: {
+                Image(systemName: "chevron.left")
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(palette.headerText)
+                    .frame(width: 44, height: 44)
+            }
+            .buttonStyle(.plain)
+            .glassEffect(.regular.interactive())
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Star Battle")
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .foregroundStyle(palette.headerText)
+                Text("\(selectedMode.title) • \(viewModel.currentDifficulty.title)")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(palette.headerSubtext)
+            }
+
+            Spacer()
+
+            Button {
+                showSettings = true
+            } label: {
+                Image(systemName: "gearshape.fill")
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(palette.headerText)
+                    .frame(width: 44, height: 44)
+            }
+            .buttonStyle(.plain)
+            .glassEffect(.regular.interactive())
+        }
+        .padding(12)
         .background(palette.headerCard, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .overlay(
+        .overlay {
             RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .stroke(palette.headerBorder, lineWidth: 1)
-        )
+        }
     }
 
     private func puzzleCard(availableWidth: CGFloat) -> some View {
@@ -106,25 +261,59 @@ struct ContentView: View {
         .background(palette.cardBackground, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
         .overlay(alignment: .center) {
             if showSolvedCelebration {
-                SolvedOverlay(durationText: viewModel.lastSolvedDurationText)
-                    .transition(.scale.combined(with: .opacity))
+                SolvedOverlay(
+                    durationText: viewModel.lastSolvedDurationText,
+                    onNewGame: {
+                        showSolvedCelebration = false
+                        viewModel.loadNextPuzzle()
+                    },
+                    onHome: {
+                        showSolvedCelebration = false
+                        currentScreen = .home
+                    }
+                )
+                .transition(.scale.combined(with: .opacity))
             }
         }
         .onChange(of: viewModel.status) { _, newValue in
-            guard newValue == "Solved" else { return }
             withAnimation(.spring(response: 0.45, dampingFraction: 0.72)) {
-                showSolvedCelebration = true
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
-                withAnimation(.easeOut(duration: 0.25)) {
-                    showSolvedCelebration = false
-                }
+                showSolvedCelebration = newValue == "Solved"
             }
         }
     }
 
     private var palette: AppPalette {
         AppPalette(colorScheme: colorScheme)
+    }
+}
+
+private struct SettingsSheet: View {
+    @Binding var autoMarkEnabled: Bool
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section("Game") {
+                    Toggle("Auto X", isOn: $autoMarkEnabled)
+                }
+
+                Section("How To Play") {
+                    Text("Tap once for X.")
+                    Text("Tap the same cell again quickly for a star.")
+                    Text("Drag across the board to sweep crosses.")
+                    Text("Place one star in every row, column, and region.")
+                }
+            }
+            .navigationTitle("Settings")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -275,61 +464,158 @@ private struct AppPalette {
     init(colorScheme: ColorScheme) {
         if colorScheme == .dark {
             backgroundTop = Color(red: 0.14, green: 0.16, blue: 0.19)
-            backgroundBottom = Color(red: 0.08, green: 0.09, blue: 0.11)
+            backgroundBottom = Color(red: 0.09, green: 0.10, blue: 0.12)
             headerCard = Color.white.opacity(0.08)
             headerBorder = Color.white.opacity(0.12)
-            headerText = .white
-            headerSubtext = Color.white.opacity(0.74)
-            modeBadge = Color.white.opacity(0.08)
-            cardBackground = Color(red: 0.15, green: 0.17, blue: 0.20)
-            bodySubtext = Color.white.opacity(0.72)
-            cellBackground = Color(red: 0.10, green: 0.11, blue: 0.13)
-            gridLine = Color.white.opacity(0.12)
-            regionBorder = Color.white.opacity(0.72)
-            outerBorder = Color.white.opacity(0.18)
-            star = Color.yellow.opacity(0.95)
-            mark = Color.white.opacity(0.72)
+            headerText = Color.white.opacity(0.96)
+            headerSubtext = Color.white.opacity(0.72)
+            modeBadge = Color.white.opacity(0.10)
+            cardBackground = Color.white.opacity(0.08)
+            bodySubtext = Color.white.opacity(0.70)
+            cellBackground = Color.white.opacity(0.03)
+            gridLine = Color.white.opacity(0.10)
+            regionBorder = Color.white.opacity(0.78)
+            outerBorder = Color.white.opacity(0.22)
+            star = Color(red: 0.98, green: 0.82, blue: 0.22)
+            mark = Color.white.opacity(0.75)
         } else {
-            backgroundTop = Color(red: 0.93, green: 0.94, blue: 0.97)
-            backgroundBottom = Color(red: 0.84, green: 0.87, blue: 0.91)
-            headerCard = Color.white.opacity(0.68)
-            headerBorder = Color.black.opacity(0.08)
-            headerText = Color.black.opacity(0.9)
-            headerSubtext = Color.black.opacity(0.66)
+            backgroundTop = Color(red: 0.94, green: 0.96, blue: 0.99)
+            backgroundBottom = Color(red: 0.86, green: 0.90, blue: 0.96)
+            headerCard = Color.white.opacity(0.82)
+            headerBorder = Color.black.opacity(0.06)
+            headerText = Color(red: 0.10, green: 0.13, blue: 0.18)
+            headerSubtext = Color.black.opacity(0.60)
             modeBadge = Color.black.opacity(0.06)
-            cardBackground = Color(red: 0.97, green: 0.97, blue: 0.98)
+            cardBackground = Color.white.opacity(0.84)
             bodySubtext = Color.black.opacity(0.62)
-            cellBackground = .white
-            gridLine = Color.black.opacity(0.12)
-            regionBorder = Color.black.opacity(0.62)
-            outerBorder = Color.black.opacity(0.22)
-            star = Color(red: 0.62, green: 0.25, blue: 0.13)
+            cellBackground = Color.white.opacity(0.72)
+            gridLine = Color.black.opacity(0.10)
+            regionBorder = Color.black.opacity(0.72)
+            outerBorder = Color.black.opacity(0.12)
+            star = Color(red: 0.88, green: 0.67, blue: 0.10)
             mark = Color.black.opacity(0.55)
         }
     }
 }
 
+private struct RegionEdgesShape: Shape {
+    let top: Bool
+    let bottom: Bool
+    let leading: Bool
+    let trailing: Bool
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        if top {
+            path.move(to: CGPoint(x: rect.minX, y: rect.minY))
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
+        }
+        if bottom {
+            path.move(to: CGPoint(x: rect.minX, y: rect.maxY))
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        }
+        if leading {
+            path.move(to: CGPoint(x: rect.minX, y: rect.minY))
+            path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+        }
+        if trailing {
+            path.move(to: CGPoint(x: rect.maxX, y: rect.minY))
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        }
+        return path
+    }
+}
+
 private struct SolvedOverlay: View {
     let durationText: String
+    let onNewGame: () -> Void
+    let onHome: () -> Void
 
     var body: some View {
-        VStack(spacing: 8) {
-            Text("★")
-                .font(.system(size: 44))
-            Text("Puzzle Solved")
-                .font(.headline.weight(.bold))
-            Text(durationText.isEmpty ? "Nice work" : "Finished in \(durationText)")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+        VStack(spacing: 14) {
+            Image(systemName: "sparkles")
+                .font(.system(size: 30, weight: .bold))
+                .foregroundStyle(Color(red: 0.98, green: 0.82, blue: 0.22))
+
+            Text("Puzzle solved")
+                .font(.title3.weight(.bold))
+                .foregroundStyle(.white)
+
+            if !durationText.isEmpty {
+                Text("Finished in \(durationText)")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.white.opacity(0.78))
+            }
+
+            HStack(spacing: 10) {
+                Button("Home", action: onHome)
+                    .buttonStyle(SolvedActionButtonStyle())
+
+                Button("New Game", action: onNewGame)
+                    .buttonStyle(SolvedActionButtonStyle(prominent: true))
+            }
         }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 18)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(Color.white.opacity(0.2), lineWidth: 1)
-        )
-        .shadow(color: .black.opacity(0.2), radius: 16, y: 8)
+        .padding(.horizontal, 22)
+        .padding(.vertical, 20)
+        .background(.black.opacity(0.82), in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+        .shadow(color: .black.opacity(0.18), radius: 18, y: 10)
+    }
+}
+
+private struct SolvedActionButtonStyle: ButtonStyle {
+    var prominent = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(prominent ? Color.black.opacity(0.85) : Color.white)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background(
+                Group {
+                    if prominent {
+                        Capsule().fill(Color.white.opacity(configuration.isPressed ? 0.82 : 0.94))
+                    } else {
+                        Capsule().stroke(Color.white.opacity(configuration.isPressed ? 0.55 : 0.80), lineWidth: 1)
+                    }
+                }
+            )
+    }
+}
+
+private struct DifficultyCard: View {
+    let title: String
+    let count: Int
+    let isSelected: Bool
+    let isEnabled: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 6) {
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                Text(count > 0 ? "\(count) puzzles" : "Soon")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(isSelected && isEnabled ? Color.white.opacity(0.18) : Color.clear)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(
+                        isSelected && isEnabled ? Color.white.opacity(0.75) : Color.white.opacity(0.18),
+                        lineWidth: 1
+                    )
+            }
+            .opacity(isEnabled ? 1 : 0.55)
+        }
+        .buttonStyle(.plain)
+        .disabled(!isEnabled)
     }
 }
 
@@ -352,35 +638,5 @@ private struct ActionIconButton: View {
         }
         .buttonStyle(.plain)
         .glassEffect(.regular.interactive())
-    }
-}
-
-private struct RegionEdgesShape: Shape {
-    let top: Bool
-    let bottom: Bool
-    let leading: Bool
-    let trailing: Bool
-
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-
-        if top {
-            path.move(to: CGPoint(x: rect.minX, y: rect.minY))
-            path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
-        }
-        if bottom {
-            path.move(to: CGPoint(x: rect.minX, y: rect.maxY))
-            path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
-        }
-        if leading {
-            path.move(to: CGPoint(x: rect.minX, y: rect.minY))
-            path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
-        }
-        if trailing {
-            path.move(to: CGPoint(x: rect.maxX, y: rect.minY))
-            path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
-        }
-
-        return path
     }
 }

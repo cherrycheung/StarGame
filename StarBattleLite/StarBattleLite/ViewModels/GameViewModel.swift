@@ -5,6 +5,7 @@ final class GameViewModel: ObservableObject {
     @Published private(set) var config: GameConfig
     @Published private(set) var puzzles: [Puzzle]
     @Published private(set) var puzzleIndex: Int = 0
+    @Published private(set) var currentDifficulty: PuzzleDifficulty = .easy
     @Published private(set) var boardState: [[CellState]]
     @Published var message: String = ""
     @Published var status: String = ""
@@ -18,7 +19,7 @@ final class GameViewModel: ObservableObject {
     private var lastTapTime = Date.distantPast
     private var puzzleStartTime = Date()
 
-    init(config: GameConfig = .oneStar, puzzles: [Puzzle] = PuzzleLibrary.starterPuzzles) {
+    init(config: GameConfig = .oneStar, puzzles: [Puzzle] = PuzzleLibrary.puzzles(for: .easy)) {
         self.config = config
         self.puzzles = puzzles
         self.boardState = Array(
@@ -30,6 +31,12 @@ final class GameViewModel: ObservableObject {
 
     var currentPuzzle: Puzzle {
         puzzles[puzzleIndex]
+    }
+
+    var availableDifficultyCounts: [PuzzleDifficulty: Int] {
+        Dictionary(uniqueKeysWithValues: PuzzleDifficulty.allCases.map { difficulty in
+            (difficulty, PuzzleLibrary.puzzleCount(for: difficulty))
+        })
     }
 
     var starCount: Int {
@@ -118,6 +125,12 @@ final class GameViewModel: ObservableObject {
         loadPuzzle(at: nextIndex)
     }
 
+    func startNewSession(difficulty: PuzzleDifficulty) {
+        currentDifficulty = difficulty
+        puzzles = PuzzleLibrary.puzzles(for: difficulty)
+        loadPuzzle(at: 0)
+    }
+
     func checkProgress() {
         let validation = validateBoard()
         invalidCells = validation.invalidCells
@@ -164,6 +177,7 @@ final class GameViewModel: ObservableObject {
     }
 
     private func loadPuzzle(at index: Int) {
+        guard !puzzles.isEmpty else { return }
         puzzleIndex = index
         boardState = Self.emptyBoard(size: puzzles[index].size)
         history.removeAll()

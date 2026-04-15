@@ -11,6 +11,7 @@
 		A10000000000000000000012 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000002 /* ContentView.swift */; };
 		A10000000000000000000013 /* GameModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000003 /* GameModels.swift */; };
 		A10000000000000000000014 /* GameViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000004 /* GameViewModel.swift */; };
+		A10000000000000000000015 /* generated_puzzles.json in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000005 /* generated_puzzles.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -18,6 +19,7 @@
 		A10000000000000000000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A10000000000000000000003 /* GameModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameModels.swift; sourceTree = "<group>"; };
 		A10000000000000000000004 /* GameViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameViewModel.swift; sourceTree = "<group>"; };
+		A10000000000000000000005 /* generated_puzzles.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = generated_puzzles.json; sourceTree = "<group>"; };
 		A10000000000000000000006 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A10000000000000000000007 /* StarBattleLite.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = StarBattleLite.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -48,6 +50,7 @@
 				A10000000000000000000002 /* ContentView.swift */,
 				A10000000000000000000034 /* Models */,
 				A10000000000000000000035 /* ViewModels */,
+				A10000000000000000000036 /* Resources */,
 				A10000000000000000000006 /* Info.plist */,
 			);
 			path = StarBattleLite;
@@ -75,6 +78,14 @@
 				A10000000000000000000004 /* GameViewModel.swift */,
 			);
 			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000036 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000005 /* generated_puzzles.json */,
+			);
+			path = Resources;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -136,6 +147,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A10000000000000000000015 /* generated_puzzles.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

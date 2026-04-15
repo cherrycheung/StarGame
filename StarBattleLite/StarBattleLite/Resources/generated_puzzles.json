@@ -1,0 +1,1601 @@
+{
+  "generatedAt": "2026-04-15T08:05:03.631Z",
+  "boardSize": 6,
+  "starsPerUnit": 1,
+  "attempts": 50000,
+  "counts": {
+    "easy": 18,
+    "medium": 0,
+    "hard": 0
+  },
+  "puzzles": {
+    "easy": [
+      {
+        "id": "easy-001",
+        "name": "Soft Orbit 1",
+        "size": 6,
+        "starsPerUnit": 1,
+        "difficulty": "easy",
+        "regions": [
+          [
+            "F",
+            "E",
+            "C",
+            "C",
+            "C",
+            "A"
+          ],
+          [
+            "F",
+            "F",
+            "C",
+            "C",
+            "C",
+            "A"
+          ],
+          [
+            "F",
+            "F",
+            "C",
+            "C",
+            "C",
+            "C"
+          ],
+          [
+            "F",
+            "C",
+            "C",
+            "C",
+            "C",
+            "C"
+          ],
+          [
+            "F",
+            "F",
+            "C",
+            "C",
+            "B",
+            "B"
+          ],
+          [
+            "D",
+            "D",
+            "D",
+            "D",
+            "B",
+            "B"
+          ]
+        ],
+        "solution": [
+          {
+            "row": 1,
+            "column": 5
+          },
+          {
+            "row": 4,
+            "column": 4
+          },
+          {
+            "row": 2,
+            "column": 3
+          },
+          {
+            "row": 5,
+            "column": 2
+          },
+          {
+            "row": 0,
+            "column": 1
+          },
+          {
+            "row": 3,
+            "column": 0
+          }
+        ],
+        "metrics": {
+          "branchScore": 2,
+          "forcedChoices": 5,
+          "ratingScore": 0.25
+        }
+      },
+      {
+        "id": "easy-002",
+        "name": "Soft Nova 2",
+        "size": 6,
+        "starsPerUnit": 1,
+        "difficulty": "easy",
+        "regions": [
+          [
+            "B",
+            "B",
+            "D",
+            "D",
+            "D",
+            "D"
+          ],
+          [
+            "B",
+            "B",
+            "C",
+            "C",
+            "F",
+            "F"
+          ],
+          [
+            "C",
+            "C",
+            "C",
+            "C",
+            "C",
+            "F"
+          ],
+          [
+            "C",
+            "C",
+            "C",
+            "F",
+            "F",
+            "F"
+          ],
+          [
+            "A",
+            "C",
+            "C",
+            "C",
+            "F",
+            "F"
+          ],
+          [
+            "A",
+            "C",
+            "C",
+            "C",
+            "E",
+            "E"
+          ]
+        ],
+        "solution": [
+          {
+            "row": 4,
+            "column": 0
+          },
+          {
+            "row": 1,
+            "column": 1
+          },
+          {
+            "row": 3,
+            "column": 2
+          },
+          {
+            "row": 0,
+            "column": 3
+          },
+          {
+            "row": 5,
+            "column": 4
+          },
+          {
+            "row": 2,
+            "column": 5
+          }
+        ],
+        "metrics": {
+          "branchScore": 5,
+          "forcedChoices": 5,
+          "ratingScore": 3.25
+        }
+      },
+      {
+        "id": "easy-003",
+        "name": "Soft Drift 3",
+        "size": 6,
+        "starsPerUnit": 1,
+        "difficulty": "easy",
+        "regions": [
+          [
+            "D",
+            "D",
+            "D",
+            "D",
+            "D",
+            "B"
+          ],
+          [
+            "F",
+            "F",
+            "C",
+            "C",
+            "B",
+            "B"
+          ],
+          [
+            "F",
+            "C",
+            "C",
+            "C",
+            "C",
+            "C"
+          ],
+          [
+            "F",
+            "F",
+            "C",
+            "C",
+            "C",
+            "C"
+          ],
+          [
+            "F",
+            "C",
+            "C",
+            "C",
+            "C",
+            "A"
+          ],
+          [
+            "E",
+            "E",
+            "C",
+            "C",
+            "C",
+            "A"
+          ]
+        ],
+        "solution": [
+          {
+            "row": 4,
+            "column": 5
+          },
+          {
+            "row": 1,
+            "column": 4
+          },
+          {
+            "row": 3,
+            "column": 3
+          },
+          {
+            "row": 0,
+            "column": 2
+          },
+          {
+            "row": 5,
+            "column": 1
+          },
+          {
+            "row": 2,
+            "column": 0
+          }
+        ],
+        "metrics": {
+          "branchScore": 3,
+          "forcedChoices": 4,
+          "ratingScore": 1.6
+        }
+      },
+      {
+        "id": "easy-004",
+        "name": "Soft Signal 4",
+        "size": 6,
+        "starsPerUnit": 1,
+        "difficulty": "easy",
+        "regions": [
+          [
+            "F",
+            "F",
+            "D",
+            "D",
+            "B",
+            "B"
+          ],
+          [
+            "F",
+            "C",
+            "C",
+            "C",
+            "B",
+            "B"
+          ],
+          [
+            "F",
+            "F",
+            "F",
+            "C",
+            "C",
+            "C"
+          ],
+          [
+            "F",
+            "F",
+            "E",
+            "C",
+            "A",
+            "A"
+          ],
+          [
+            "F",
+            "F",
+            "E",
+            "E",
+            "E",
+            "A"
+          ],
+          [
+            "F",
+            "E",
+            "E",
+            "E",
+            "A",
+            "A"
+          ]
+        ],
+        "solution": [
+          {
+            "row": 4,
+            "column": 5
+          },
+          {
+            "row": 1,
+            "column": 4
+          },
+          {
+            "row": 3,
+            "column": 3
+          },
+          {
+            "row": 0,
+            "column": 2
+          },
+          {
+            "row": 5,
+            "column": 1
+          },
+          {
+            "row": 2,
+            "column": 0
+          }
+        ],
+        "metrics": {
+          "branchScore": 3,
+          "forcedChoices": 7,
+          "ratingScore": 0.55
+        }
+      },
+      {
+        "id": "easy-005",
+        "name": "Soft Arc 5",
+        "size": 6,
+        "starsPerUnit": 1,
+        "difficulty": "easy",
+        "regions": [
+          [
+            "F",
+            "F",
+            "F",
+            "F",
+            "F",
+            "F"
+          ],
+          [
+            "E",
+            "F",
+            "F",
+            "F",
+            "C",
+            "F"
+          ],
+          [
+            "E",
+            "E",
+            "E",
+            "F",
+            "C",
+            "D"
+          ],
+          [
+            "E",
+            "E",
+            "C",
+            "C",
+            "C",
+            "D"
+          ],
+          [
+            "A",
+            "E",
+            "E",
+            "C",
+            "B",
+            "B"
+          ],
+          [
+            "A",
+            "A",
+            "A",
+            "C",
+            "B",
+            "B"
+          ]
+        ],
+        "solution": [
+          {
+            "row": 5,
+            "column": 1
+          },
+          {
+            "row": 4,
+            "column": 4
+          },
+          {
+            "row": 3,
+            "column": 2
+          },
+          {
+            "row": 2,
+            "column": 5
+          },
+          {
+            "row": 1,
+            "column": 0
+          },
+          {
+            "row": 0,
+            "column": 3
+          }
+        ],
+        "metrics": {
+          "branchScore": 2,
+          "forcedChoices": 6,
+          "ratingScore": -0.1
+        }
+      },
+      {
+        "id": "easy-006",
+        "name": "Soft Vector 6",
+        "size": 6,
+        "starsPerUnit": 1,
+        "difficulty": "easy",
+        "regions": [
+          [
+            "A",
+            "A",
+            "A",
+            "C",
+            "B",
+            "B"
+          ],
+          [
+            "A",
+            "E",
+            "E",
+            "C",
+            "B",
+            "B"
+          ],
+          [
+            "E",
+            "E",
+            "C",
+            "C",
+            "C",
+            "D"
+          ],
+          [
+            "E",
+            "E",
+            "E",
+            "F",
+            "C",
+            "D"
+          ],
+          [
+            "E",
+            "F",
+            "F",
+            "F",
+            "F",
+            "F"
+          ],
+          [
+            "F",
+            "F",
+            "F",
+            "F",
+            "F",
+            "F"
+          ]
+        ],
+        "solution": [
+          {
+            "row": 0,
+            "column": 1
+          },
+          {
+            "row": 1,
+            "column": 4
+          },
+          {
+            "row": 2,
+            "column": 2
+          },
+          {
+            "row": 3,
+            "column": 5
+          },
+          {
+            "row": 4,
+            "column": 0
+          },
+          {
+            "row": 5,
+            "column": 3
+          }
+        ],
+        "metrics": {
+          "branchScore": 2,
+          "forcedChoices": 6,
+          "ratingScore": -0.1
+        }
+      },
+      {
+        "id": "easy-007",
+        "name": "Soft Skylight 7",
+        "size": 6,
+        "starsPerUnit": 1,
+        "difficulty": "easy",
+        "regions": [
+          [
+            "F",
+            "F",
+            "F",
+            "F",
+            "F",
+            "F"
+          ],
+          [
+            "F",
+            "F",
+            "F",
+            "F",
+            "F",
+            "E"
+          ],
+          [
+            "D",
+            "C",
+            "F",
+            "E",
+            "E",
+            "E"
+          ],
+          [
+            "D",
+            "C",
+            "C",
+            "C",
+            "E",
+            "E"
+          ],
+          [
+            "B",
+            "B",
+            "C",
+            "E",
+            "E",
+            "A"
+          ],
+          [
+            "B",
+            "B",
+            "C",
+            "A",
+            "A",
+            "A"
+          ]
+        ],
+        "solution": [
+          {
+            "row": 5,
+            "column": 4
+          },
+          {
+            "row": 4,
+            "column": 1
+          },
+          {
+            "row": 3,
+            "column": 3
+          },
+          {
+            "row": 2,
+            "column": 0
+          },
+          {
+            "row": 1,
+            "column": 5
+          },
+          {
+            "row": 0,
+            "column": 2
+          }
+        ],
+        "metrics": {
+          "branchScore": 2,
+          "forcedChoices": 6,
+          "ratingScore": -0.1
+        }
+      },
+      {
+        "id": "easy-008",
+        "name": "Soft Comet 8",
+        "size": 6,
+        "starsPerUnit": 1,
+        "difficulty": "easy",
+        "regions": [
+          [
+            "B",
+            "B",
+            "D",
+            "D",
+            "F",
+            "F"
+          ],
+          [
+            "B",
+            "B",
+            "C",
+            "C",
+            "F",
+            "F"
+          ],
+          [
+            "C",
+            "C",
+            "C",
+            "F",
+            "F",
+            "F"
+          ],
+          [
+            "A",
+            "A",
+            "C",
+            "E",
+            "F",
+            "F"
+          ],
+          [
+            "A",
+            "E",
+            "E",
+            "E",
+            "F",
+            "F"
+          ],
+          [
+            "A",
+            "E",
+            "E",
+            "E",
+            "E",
+            "F"
+          ]
+        ],
+        "solution": [
+          {
+            "row": 4,
+            "column": 0
+          },
+          {
+            "row": 1,
+            "column": 1
+          },
+          {
+            "row": 3,
+            "column": 2
+          },
+          {
+            "row": 0,
+            "column": 3
+          },
+          {
+            "row": 5,
+            "column": 4
+          },
+          {
+            "row": 2,
+            "column": 5
+          }
+        ],
+        "metrics": {
+          "branchScore": 2,
+          "forcedChoices": 6,
+          "ratingScore": -0.1
+        }
+      },
+      {
+        "id": "easy-009",
+        "name": "Soft Halo 9",
+        "size": 6,
+        "starsPerUnit": 1,
+        "difficulty": "easy",
+        "regions": [
+          [
+            "F",
+            "F",
+            "D",
+            "D",
+            "B",
+            "B"
+          ],
+          [
+            "F",
+            "C",
+            "C",
+            "C",
+            "B",
+            "B"
+          ],
+          [
+            "F",
+            "F",
+            "F",
+            "C",
+            "C",
+            "C"
+          ],
+          [
+            "F",
+            "F",
+            "E",
+            "C",
+            "C",
+            "A"
+          ],
+          [
+            "F",
+            "F",
+            "E",
+            "E",
+            "E",
+            "A"
+          ],
+          [
+            "F",
+            "E",
+            "E",
+            "E",
+            "A",
+            "A"
+          ]
+        ],
+        "solution": [
+          {
+            "row": 4,
+            "column": 5
+          },
+          {
+            "row": 1,
+            "column": 4
+          },
+          {
+            "row": 3,
+            "column": 3
+          },
+          {
+            "row": 0,
+            "column": 2
+          },
+          {
+            "row": 5,
+            "column": 1
+          },
+          {
+            "row": 2,
+            "column": 0
+          }
+        ],
+        "metrics": {
+          "branchScore": 2,
+          "forcedChoices": 7,
+          "ratingScore": -0.45
+        }
+      },
+      {
+        "id": "easy-010",
+        "name": "Soft Lattice 10",
+        "size": 6,
+        "starsPerUnit": 1,
+        "difficulty": "easy",
+        "regions": [
+          [
+            "A",
+            "A",
+            "A",
+            "C",
+            "B",
+            "B"
+          ],
+          [
+            "A",
+            "E",
+            "E",
+            "C",
+            "B",
+            "B"
+          ],
+          [
+            "E",
+            "E",
+            "C",
+            "C",
+            "C",
+            "D"
+          ],
+          [
+            "E",
+            "E",
+            "F",
+            "F",
+            "F",
+            "D"
+          ],
+          [
+            "E",
+            "F",
+            "F",
+            "F",
+            "F",
+            "F"
+          ],
+          [
+            "F",
+            "F",
+            "F",
+            "F",
+            "F",
+            "F"
+          ]
+        ],
+        "solution": [
+          {
+            "row": 0,
+            "column": 1
+          },
+          {
+            "row": 1,
+            "column": 4
+          },
+          {
+            "row": 2,
+            "column": 2
+          },
+          {
+            "row": 3,
+            "column": 5
+          },
+          {
+            "row": 4,
+            "column": 0
+          },
+          {
+            "row": 5,
+            "column": 3
+          }
+        ],
+        "metrics": {
+          "branchScore": 2,
+          "forcedChoices": 6,
+          "ratingScore": -0.1
+        }
+      },
+      {
+        "id": "easy-011",
+        "name": "Soft Orbit 11",
+        "size": 6,
+        "starsPerUnit": 1,
+        "difficulty": "easy",
+        "regions": [
+          [
+            "F",
+            "F",
+            "F",
+            "F",
+            "F",
+            "F"
+          ],
+          [
+            "F",
+            "F",
+            "F",
+            "F",
+            "F",
+            "E"
+          ],
+          [
+            "D",
+            "C",
+            "C",
+            "E",
+            "E",
+            "E"
+          ],
+          [
+            "D",
+            "C",
+            "C",
+            "C",
+            "E",
+            "E"
+          ],
+          [
+            "B",
+            "B",
+            "C",
+            "E",
+            "E",
+            "A"
+          ],
+          [
+            "B",
+            "B",
+            "C",
+            "A",
+            "A",
+            "A"
+          ]
+        ],
+        "solution": [
+          {
+            "row": 5,
+            "column": 4
+          },
+          {
+            "row": 4,
+            "column": 1
+          },
+          {
+            "row": 3,
+            "column": 3
+          },
+          {
+            "row": 2,
+            "column": 0
+          },
+          {
+            "row": 1,
+            "column": 5
+          },
+          {
+            "row": 0,
+            "column": 2
+          }
+        ],
+        "metrics": {
+          "branchScore": 2,
+          "forcedChoices": 8,
+          "ratingScore": -0.8
+        }
+      },
+      {
+        "id": "easy-012",
+        "name": "Soft Nova 12",
+        "size": 6,
+        "starsPerUnit": 1,
+        "difficulty": "easy",
+        "regions": [
+          [
+            "A",
+            "A",
+            "A",
+            "C",
+            "B",
+            "B"
+          ],
+          [
+            "A",
+            "E",
+            "A",
+            "C",
+            "B",
+            "B"
+          ],
+          [
+            "E",
+            "E",
+            "C",
+            "C",
+            "C",
+            "D"
+          ],
+          [
+            "E",
+            "E",
+            "F",
+            "F",
+            "F",
+            "D"
+          ],
+          [
+            "E",
+            "F",
+            "F",
+            "F",
+            "F",
+            "F"
+          ],
+          [
+            "F",
+            "F",
+            "F",
+            "F",
+            "F",
+            "F"
+          ]
+        ],
+        "solution": [
+          {
+            "row": 0,
+            "column": 1
+          },
+          {
+            "row": 1,
+            "column": 4
+          },
+          {
+            "row": 2,
+            "column": 2
+          },
+          {
+            "row": 3,
+            "column": 5
+          },
+          {
+            "row": 4,
+            "column": 0
+          },
+          {
+            "row": 5,
+            "column": 3
+          }
+        ],
+        "metrics": {
+          "branchScore": 3,
+          "forcedChoices": 5,
+          "ratingScore": 1.25
+        }
+      },
+      {
+        "id": "easy-013",
+        "name": "Soft Drift 13",
+        "size": 6,
+        "starsPerUnit": 1,
+        "difficulty": "easy",
+        "regions": [
+          [
+            "F",
+            "F",
+            "F",
+            "F",
+            "F",
+            "F"
+          ],
+          [
+            "F",
+            "F",
+            "F",
+            "F",
+            "F",
+            "E"
+          ],
+          [
+            "D",
+            "C",
+            "C",
+            "E",
+            "E",
+            "E"
+          ],
+          [
+            "D",
+            "C",
+            "C",
+            "C",
+            "E",
+            "E"
+          ],
+          [
+            "B",
+            "B",
+            "C",
+            "E",
+            "E",
+            "A"
+          ],
+          [
+            "B",
+            "C",
+            "C",
+            "A",
+            "A",
+            "A"
+          ]
+        ],
+        "solution": [
+          {
+            "row": 5,
+            "column": 4
+          },
+          {
+            "row": 4,
+            "column": 1
+          },
+          {
+            "row": 3,
+            "column": 3
+          },
+          {
+            "row": 2,
+            "column": 0
+          },
+          {
+            "row": 1,
+            "column": 5
+          },
+          {
+            "row": 0,
+            "column": 2
+          }
+        ],
+        "metrics": {
+          "branchScore": 1,
+          "forcedChoices": 5,
+          "ratingScore": -0.75
+        }
+      },
+      {
+        "id": "easy-014",
+        "name": "Soft Signal 14",
+        "size": 6,
+        "starsPerUnit": 1,
+        "difficulty": "easy",
+        "regions": [
+          [
+            "A",
+            "A",
+            "A",
+            "B",
+            "B",
+            "B"
+          ],
+          [
+            "A",
+            "E",
+            "E",
+            "C",
+            "B",
+            "B"
+          ],
+          [
+            "E",
+            "E",
+            "C",
+            "C",
+            "C",
+            "D"
+          ],
+          [
+            "E",
+            "E",
+            "F",
+            "F",
+            "F",
+            "D"
+          ],
+          [
+            "E",
+            "F",
+            "F",
+            "F",
+            "F",
+            "F"
+          ],
+          [
+            "F",
+            "F",
+            "F",
+            "F",
+            "F",
+            "F"
+          ]
+        ],
+        "solution": [
+          {
+            "row": 0,
+            "column": 1
+          },
+          {
+            "row": 1,
+            "column": 4
+          },
+          {
+            "row": 2,
+            "column": 2
+          },
+          {
+            "row": 3,
+            "column": 5
+          },
+          {
+            "row": 4,
+            "column": 0
+          },
+          {
+            "row": 5,
+            "column": 3
+          }
+        ],
+        "metrics": {
+          "branchScore": 3,
+          "forcedChoices": 7,
+          "ratingScore": 0.55
+        }
+      },
+      {
+        "id": "easy-015",
+        "name": "Soft Arc 15",
+        "size": 6,
+        "starsPerUnit": 1,
+        "difficulty": "easy",
+        "regions": [
+          [
+            "F",
+            "F",
+            "F",
+            "F",
+            "F",
+            "F"
+          ],
+          [
+            "F",
+            "F",
+            "F",
+            "F",
+            "F",
+            "E"
+          ],
+          [
+            "D",
+            "C",
+            "C",
+            "E",
+            "E",
+            "E"
+          ],
+          [
+            "D",
+            "C",
+            "C",
+            "C",
+            "E",
+            "E"
+          ],
+          [
+            "B",
+            "B",
+            "C",
+            "A",
+            "E",
+            "A"
+          ],
+          [
+            "B",
+            "C",
+            "C",
+            "A",
+            "A",
+            "A"
+          ]
+        ],
+        "solution": [
+          {
+            "row": 5,
+            "column": 4
+          },
+          {
+            "row": 4,
+            "column": 1
+          },
+          {
+            "row": 3,
+            "column": 3
+          },
+          {
+            "row": 2,
+            "column": 0
+          },
+          {
+            "row": 1,
+            "column": 5
+          },
+          {
+            "row": 0,
+            "column": 2
+          }
+        ],
+        "metrics": {
+          "branchScore": 1,
+          "forcedChoices": 5,
+          "ratingScore": -0.75
+        }
+      },
+      {
+        "id": "easy-016",
+        "name": "Soft Vector 16",
+        "size": 6,
+        "starsPerUnit": 1,
+        "difficulty": "easy",
+        "regions": [
+          [
+            "F",
+            "F",
+            "F",
+            "F",
+            "F",
+            "F"
+          ],
+          [
+            "F",
+            "F",
+            "F",
+            "F",
+            "F",
+            "E"
+          ],
+          [
+            "D",
+            "C",
+            "C",
+            "E",
+            "E",
+            "E"
+          ],
+          [
+            "D",
+            "C",
+            "C",
+            "C",
+            "E",
+            "E"
+          ],
+          [
+            "B",
+            "B",
+            "C",
+            "C",
+            "E",
+            "A"
+          ],
+          [
+            "B",
+            "B",
+            "C",
+            "A",
+            "A",
+            "A"
+          ]
+        ],
+        "solution": [
+          {
+            "row": 5,
+            "column": 4
+          },
+          {
+            "row": 4,
+            "column": 1
+          },
+          {
+            "row": 3,
+            "column": 3
+          },
+          {
+            "row": 2,
+            "column": 0
+          },
+          {
+            "row": 1,
+            "column": 5
+          },
+          {
+            "row": 0,
+            "column": 2
+          }
+        ],
+        "metrics": {
+          "branchScore": 2,
+          "forcedChoices": 8,
+          "ratingScore": -0.8
+        }
+      },
+      {
+        "id": "easy-017",
+        "name": "Soft Skylight 17",
+        "size": 6,
+        "starsPerUnit": 1,
+        "difficulty": "easy",
+        "regions": [
+          [
+            "F",
+            "F",
+            "F",
+            "F",
+            "F",
+            "F"
+          ],
+          [
+            "F",
+            "F",
+            "F",
+            "F",
+            "F",
+            "E"
+          ],
+          [
+            "D",
+            "C",
+            "C",
+            "E",
+            "E",
+            "E"
+          ],
+          [
+            "D",
+            "C",
+            "C",
+            "C",
+            "E",
+            "A"
+          ],
+          [
+            "B",
+            "B",
+            "C",
+            "C",
+            "E",
+            "A"
+          ],
+          [
+            "B",
+            "B",
+            "C",
+            "A",
+            "A",
+            "A"
+          ]
+        ],
+        "solution": [
+          {
+            "row": 5,
+            "column": 4
+          },
+          {
+            "row": 4,
+            "column": 1
+          },
+          {
+            "row": 3,
+            "column": 3
+          },
+          {
+            "row": 2,
+            "column": 0
+          },
+          {
+            "row": 1,
+            "column": 5
+          },
+          {
+            "row": 0,
+            "column": 2
+          }
+        ],
+        "metrics": {
+          "branchScore": 3,
+          "forcedChoices": 7,
+          "ratingScore": 0.55
+        }
+      },
+      {
+        "id": "easy-018",
+        "name": "Soft Comet 18",
+        "size": 6,
+        "starsPerUnit": 1,
+        "difficulty": "easy",
+        "regions": [
+          [
+            "F",
+            "F",
+            "F",
+            "F",
+            "F",
+            "F"
+          ],
+          [
+            "F",
+            "F",
+            "F",
+            "F",
+            "F",
+            "E"
+          ],
+          [
+            "D",
+            "C",
+            "C",
+            "E",
+            "E",
+            "E"
+          ],
+          [
+            "C",
+            "C",
+            "C",
+            "C",
+            "E",
+            "A"
+          ],
+          [
+            "B",
+            "B",
+            "C",
+            "C",
+            "E",
+            "A"
+          ],
+          [
+            "B",
+            "B",
+            "C",
+            "A",
+            "A",
+            "A"
+          ]
+        ],
+        "solution": [
+          {
+            "row": 5,
+            "column": 4
+          },
+          {
+            "row": 4,
+            "column": 1
+          },
+          {
+            "row": 3,
+            "column": 3
+          },
+          {
+            "row": 2,
+            "column": 0
+          },
+          {
+            "row": 1,
+            "column": 5
+          },
+          {
+            "row": 0,
+            "column": 2
+          }
+        ],
+        "metrics": {
+          "branchScore": 2,
+          "forcedChoices": 5,
+          "ratingScore": 0.25
+        }
+      }
+    ],
+    "medium": [],
+    "hard": []
+  }
+}
