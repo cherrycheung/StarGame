@@ -13,6 +13,18 @@ struct GameConfig {
     static let oneStar = GameConfig(starsPerUnit: 1, boardSize: 6)
 }
 
+enum PuzzleBoardSize: Int, CaseIterable, Codable, Identifiable {
+    case six = 6
+    case eight = 8
+    case ten = 10
+
+    var id: Int { rawValue }
+
+    var title: String {
+        "\(rawValue)x\(rawValue)"
+    }
+}
+
 enum PuzzleDifficulty: String, CaseIterable, Codable, Identifiable {
     case easy
     case medium
@@ -44,6 +56,18 @@ struct ValidationResult {
     let solved: Bool
 }
 
+struct LeaderboardEntry: Codable, Identifiable {
+    let id: UUID
+    let duration: TimeInterval
+    let recordedAt: Date
+
+    init(id: UUID = UUID(), duration: TimeInterval, recordedAt: Date = Date()) {
+        self.id = id
+        self.duration = duration
+        self.recordedAt = recordedAt
+    }
+}
+
 private struct GeneratedPuzzleBank: Codable {
     let puzzles: GeneratedDifficultyBuckets
 }
@@ -67,19 +91,25 @@ private struct GeneratedPuzzle: Codable {
 enum PuzzleLibrary {
     static let puzzleBank: [PuzzleDifficulty: [Puzzle]] = loadPuzzleBank()
 
-    static func puzzles(for difficulty: PuzzleDifficulty) -> [Puzzle] {
-        let bank = puzzleBank[difficulty] ?? []
+    static func puzzles(for difficulty: PuzzleDifficulty, boardSize: PuzzleBoardSize) -> [Puzzle] {
+        let bank = (puzzleBank[difficulty] ?? []).filter { $0.size == boardSize.rawValue }
         if !bank.isEmpty {
             return bank
         }
-        if difficulty == .easy {
+        if difficulty == .easy, boardSize == .six {
             return fallbackPuzzles
         }
         return []
     }
 
-    static func puzzleCount(for difficulty: PuzzleDifficulty) -> Int {
-        puzzles(for: difficulty).count
+    static func puzzleCount(for difficulty: PuzzleDifficulty, boardSize: PuzzleBoardSize) -> Int {
+        puzzles(for: difficulty, boardSize: boardSize).count
+    }
+
+    static func puzzleCount(for boardSize: PuzzleBoardSize) -> Int {
+        PuzzleDifficulty.allCases.reduce(0) { partialResult, difficulty in
+            partialResult + puzzleCount(for: difficulty, boardSize: boardSize)
+        }
     }
 
     private static func loadPuzzleBank() -> [PuzzleDifficulty: [Puzzle]] {

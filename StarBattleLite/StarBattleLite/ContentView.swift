@@ -32,7 +32,7 @@ struct ContentView: View {
     @Environment(\.colorScheme) private var colorScheme
     @State private var currentScreen: AppScreen = .home
     @State private var selectedMode: StarMode = .one
-    @State private var selectedDifficulty: PuzzleDifficulty = .easy
+    @State private var selectedBoardSize: PuzzleBoardSize = .six
     @State private var showSettings = false
     @State private var showSolvedCelebration = false
 
@@ -77,9 +77,10 @@ struct ContentView: View {
                 Text("Star Battle")
                     .font(.system(size: 36, weight: .bold, design: .rounded))
                     .foregroundStyle(palette.headerText)
-                Text("Choose your mode and difficulty, then start a clean puzzle run.")
-                    .font(.subheadline)
+                Text("Choose a mode and board size to start.")
+                    .font(.footnote)
                     .foregroundStyle(palette.headerSubtext)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             VStack(spacing: 14) {
@@ -118,28 +119,30 @@ struct ContentView: View {
             }
 
             VStack(alignment: .leading, spacing: 12) {
-                Text("Difficulty")
+                Text("Board Size")
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(palette.headerText)
 
                 HStack(spacing: 10) {
-                    ForEach(PuzzleDifficulty.allCases) { difficulty in
-                        let count = viewModel.availableDifficultyCounts[difficulty, default: 0]
+                    ForEach(PuzzleBoardSize.allCases) { boardSize in
+                        let count = viewModel.availableBoardCounts[boardSize, default: 0]
                         DifficultyCard(
-                            title: difficulty.title,
-                            count: count,
-                            isSelected: selectedDifficulty == difficulty,
+                            title: boardSize.title,
+                            isSelected: selectedBoardSize == boardSize,
                             isEnabled: count > 0 && selectedMode.isAvailable
                         ) {
                             guard count > 0 else { return }
-                            selectedDifficulty = difficulty
+                            selectedBoardSize = boardSize
                         }
                     }
                 }
             }
 
             Button {
-                viewModel.startNewSession(difficulty: selectedDifficulty)
+                viewModel.startNewSession(
+                    boardSize: selectedBoardSize,
+                    difficulty: .easy
+                )
                 currentScreen = .game
             } label: {
                 Label("Start Game", systemImage: "play.fill")
@@ -150,7 +153,12 @@ struct ContentView: View {
             }
             .buttonStyle(.plain)
             .glassEffect(.regular.interactive())
-            .disabled(viewModel.availableDifficultyCounts[selectedDifficulty, default: 0] == 0 || !selectedMode.isAvailable)
+            .disabled(
+                PuzzleLibrary.puzzleCount(for: .easy, boardSize: selectedBoardSize) == 0 ||
+                !selectedMode.isAvailable
+            )
+
+            leaderboardSection
 
             Button {
                 showSettings = true
@@ -197,7 +205,7 @@ struct ContentView: View {
                 Text("Star Battle")
                     .font(.system(size: 28, weight: .bold, design: .rounded))
                     .foregroundStyle(palette.headerText)
-                Text("\(selectedMode.title) • \(viewModel.currentDifficulty.title)")
+                Text("\(selectedMode.title) • \(viewModel.currentBoardSize.title)")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(palette.headerSubtext)
             }
@@ -284,6 +292,23 @@ struct ContentView: View {
 
     private var palette: AppPalette {
         AppPalette(colorScheme: colorScheme)
+    }
+
+    private var leaderboardSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Best Times")
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(palette.headerText)
+
+            VStack(spacing: 10) {
+                ForEach(PuzzleBoardSize.allCases) { boardSize in
+                    LeaderboardRow(
+                        title: boardSize.title,
+                        entries: viewModel.leaderboardEntries(for: boardSize)
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -585,22 +610,16 @@ private struct SolvedActionButtonStyle: ButtonStyle {
 
 private struct DifficultyCard: View {
     let title: String
-    let count: Int
     let isSelected: Bool
     let isEnabled: Bool
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 6) {
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                Text(count > 0 ? "\(count) puzzles" : "Soon")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 18)
             .background(
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
                     .fill(isSelected && isEnabled ? Color.white.opacity(0.18) : Color.clear)
@@ -616,6 +635,37 @@ private struct DifficultyCard: View {
         }
         .buttonStyle(.plain)
         .disabled(!isEnabled)
+    }
+}
+
+private struct LeaderboardRow: View {
+    let title: String
+    let entries: [LeaderboardEntry]
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .frame(width: 56, alignment: .leading)
+
+            if entries.isEmpty {
+                Text("No times yet")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            } else {
+                HStack(spacing: 10) {
+                    ForEach(Array(entries.prefix(3).enumerated()), id: \.element.id) { index, entry in
+                        Text("\(index + 1). \(GameViewModel.formatDuration(entry.duration))")
+                            .font(.footnote.weight(.medium))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(14)
+        .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 }
 

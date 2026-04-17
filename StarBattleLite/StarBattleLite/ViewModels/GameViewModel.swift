@@ -2,26 +2,41 @@ import Foundation
 
 @MainActor
 final class GameViewModel: ObservableObject {
+    private enum StorageKeys {
+        static let autoMarkEnabled = "starbattle.autoMarkEnabled"
+        static let leaderboard = "starbattle.leaderboard"
+    }
+
     @Published private(set) var config: GameConfig
     @Published private(set) var puzzles: [Puzzle]
     @Published private(set) var puzzleIndex: Int = 0
+    @Published private(set) var currentBoardSize: PuzzleBoardSize = .six
     @Published private(set) var currentDifficulty: PuzzleDifficulty = .easy
     @Published private(set) var boardState: [[CellState]]
     @Published var message: String = ""
     @Published var status: String = ""
-    @Published var autoMarkEnabled: Bool = false
+    @Published var autoMarkEnabled: Bool
     @Published private(set) var invalidCells: Set<CellPosition> = []
     @Published private(set) var canUndo: Bool = false
     @Published private(set) var lastSolvedDurationText: String = ""
+    @Published private(set) var leaderboard: [PuzzleBoardSize: [LeaderboardEntry]]
 
     private var history: [[[CellState]]] = []
     private var lastTapPosition: CellPosition?
     private var lastTapTime = Date.distantPast
     private var puzzleStartTime = Date()
+    private let userDefaults: UserDefaults
 
-    init(config: GameConfig = .oneStar, puzzles: [Puzzle] = PuzzleLibrary.puzzles(for: .easy)) {
+    init(
+        config: GameConfig = .oneStar,
+        puzzles: [Puzzle] = PuzzleLibrary.puzzles(for: .easy, boardSize: .six),
+        userDefaults: UserDefaults = .standard
+    ) {
+        self.userDefaults = userDefaults
         self.config = config
         self.puzzles = puzzles
+        self.autoMarkEnabled = userDefaults.bool(forKey: StorageKeys.autoMarkEnabled)
+        self.leaderboard = Self.loadLeaderboard(from: userDefaults)
         self.boardState = Array(
             repeating: Array(repeating: .empty, count: config.boardSize),
             count: config.boardSize
@@ -35,8 +50,18 @@ final class GameViewModel: ObservableObject {
 
     var availableDifficultyCounts: [PuzzleDifficulty: Int] {
         Dictionary(uniqueKeysWithValues: PuzzleDifficulty.allCases.map { difficulty in
-            (difficulty, PuzzleLibrary.puzzleCount(for: difficulty))
+            (difficulty, PuzzleLibrary.puzzleCount(for: difficulty, boardSize: currentBoardSize))
         })
+    }
+
+    var availableBoardCounts: [PuzzleBoardSize: Int] {
+        Dictionary(uniqueKeysWithValues: PuzzleBoardSize.allCases.map { boardSize in
+            (boardSize, PuzzleLibrary.puzzleCount(for: boardSize))
+        })
+    }
+
+    func leaderboardEntries(for boardSize: PuzzleBoardSize) -> [LeaderboardEntry] {
+        leaderboard[boardSize] ?? []
     }
 
     var starCount: Int {
@@ -101,6 +126,7 @@ final class GameViewModel: ObservableObject {
 
     func setAutoMarkEnabled(_ enabled: Bool) {
         autoMarkEnabled = enabled
+        userDefaults.set(enabled, forKey: StorageKeys.autoMarkEnabled)
         if enabled {
             saveHistory()
             applyAutoMarks()
@@ -125,9 +151,11 @@ final class GameViewModel: ObservableObject {
         loadPuzzle(at: nextIndex)
     }
 
-    func startNewSession(difficulty: PuzzleDifficulty) {
+    func startNewSession(boardSize: PuzzleBoardSize, difficulty: PuzzleDifficulty) {
+        currentBoardSize = boardSize
         currentDifficulty = difficulty
-        puzzles = PuzzleLibrary.puzzles(for: difficulty)
+        config = GameConfig(starsPerUnit: config.starsPerUnit, boardSize: boardSize.rawValue)
+        puzzles = PuzzleLibrary.puzzles(for: difficulty, boardSize: boardSize)
         loadPuzzle(at: 0)
     }
 
@@ -193,10 +221,15 @@ final class GameViewModel: ObservableObject {
     private func updateSolvedState() {
         let validation = validateBoard()
         if validation.solved {
+            let wasSolved = status == "Solved"
             status = "Solved"
-            lastSolvedDurationText = formattedElapsedTime(since: puzzleStartTime)
+            let elapsed = Date().timeIntervalSince(puzzleStartTime)
+            lastSolvedDurationText = Self.formatDuration(elapsed)
             message = ""
             invalidCells.removeAll()
+            if !wasSolved {
+                recordSolvedTime(elapsed)
+            }
         } else {
             status = ""
         }
@@ -257,6 +290,53 @@ final class GameViewModel: ObservableObject {
                 }
             }
         }
+    }
+
+    private func recordSolvedTime(_ duration: TimeInterval) {
+        let entry = LeaderboardEntry(duration: duration)
+        var entries = leaderboard[currentBoardSize] ?? []
+        entries.append(entry)
+        entries.sort { $0.duration < $1.duration }
+        leaderboard[currentBoardSize] = Array(entries.prefix(5))
+        saveLeaderboard()
+    }
+
+    private func saveLeaderboard() {
+        let payload = Dictionary(
+            uniqueKeysWithValues: leaderboard.map { key, value in
+                (String(key.rawValue), value)
+            }
+        )
+        guard let data = try? JSONEncoder().encode(payload) else { return }
+        userDefaults.set(data, forKey: StorageKeys.leaderboard)
+    }
+
+    private static func loadLeaderboard(from userDefaults: UserDefaults) -> [PuzzleBoardSize: [LeaderboardEntry]] {
+        guard
+            let data = userDefaults.data(forKey: StorageKeys.leaderboard),
+            let payload = try? JSONDecoder().decode([String: [LeaderboardEntry]].self, from: data)
+        else {
+            return [:]
+        }
+
+        var result: [PuzzleBoardSize: [LeaderboardEntry]] = [:]
+        for (rawSize, entries) in payload {
+            guard let sizeValue = Int(rawSize), let boardSize = PuzzleBoardSize(rawValue: sizeValue) else {
+                continue
+            }
+            result[boardSize] = entries.sorted { $0.duration < $1.duration }
+        }
+        return result
+    }
+
+    static func formatDuration(_ duration: TimeInterval) -> String {
+        let totalSeconds = max(Int(duration.rounded()), 0)
+        let minutes = totalSeconds / 60
+        let seconds = totalSeconds % 60
+        if minutes > 0 {
+            return "\(minutes)m \(seconds)s"
+        }
+        return "\(seconds)s"
     }
 
     private func rowHasQuota(_ row: Int) -> Bool {
