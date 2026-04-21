@@ -128,6 +128,9 @@ struct ContentView: View {
                         let count = viewModel.availableBoardCounts[boardSize, default: 0]
                         DifficultyCard(
                             title: boardSize.title,
+                            solvedCount: viewModel.solvedCount(for: boardSize),
+                            totalCount: count,
+                            progress: viewModel.completionRatio(for: boardSize),
                             isSelected: selectedBoardSize == boardSize,
                             isEnabled: count > 0 && selectedMode.isAvailable
                         ) {
@@ -610,16 +613,51 @@ private struct SolvedActionButtonStyle: ButtonStyle {
 
 private struct DifficultyCard: View {
     let title: String
+    let solvedCount: Int
+    let totalCount: Int
+    let progress: Double
     let isSelected: Bool
     let isEnabled: Bool
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 18)
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(title)
+                        .font(.subheadline.weight(.semibold))
+                    Spacer(minLength: 0)
+                    if solvedCount > 0 {
+                        Text("\(solvedCount)/\(totalCount)")
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(Color.white.opacity(isEnabled ? 0.62 : 0.38))
+                    }
+                }
+
+                GeometryReader { proxy in
+                    ZStack(alignment: .leading) {
+                        Capsule()
+                            .fill(Color.white.opacity(isEnabled ? 0.10 : 0.05))
+
+                        Capsule()
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        Color.white.opacity(isSelected ? 0.90 : 0.70),
+                                        Color.white.opacity(isSelected ? 0.55 : 0.36)
+                                    ],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .frame(width: max(proxy.size.width * progress, progress > 0 ? 8 : 0))
+                    }
+                }
+                .frame(height: 4)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 16)
             .background(
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
                     .fill(isSelected && isEnabled ? Color.white.opacity(0.18) : Color.clear)

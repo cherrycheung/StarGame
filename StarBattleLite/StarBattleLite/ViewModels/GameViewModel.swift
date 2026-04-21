@@ -5,6 +5,7 @@ final class GameViewModel: ObservableObject {
     private enum StorageKeys {
         static let autoMarkEnabled = "starbattle.autoMarkEnabled"
         static let leaderboard = "starbattle.leaderboard"
+        static let solvedPuzzleIDs = "starbattle.solvedPuzzleIDs"
     }
 
     @Published private(set) var config: GameConfig
@@ -20,6 +21,7 @@ final class GameViewModel: ObservableObject {
     @Published private(set) var canUndo: Bool = false
     @Published private(set) var lastSolvedDurationText: String = ""
     @Published private(set) var leaderboard: [PuzzleBoardSize: [LeaderboardEntry]]
+    @Published private(set) var solvedPuzzleIDs: [PuzzleBoardSize: Set<String>]
 
     private var history: [[[CellState]]] = []
     private var lastTapPosition: CellPosition?
@@ -37,6 +39,7 @@ final class GameViewModel: ObservableObject {
         self.puzzles = puzzles
         self.autoMarkEnabled = userDefaults.bool(forKey: StorageKeys.autoMarkEnabled)
         self.leaderboard = Self.loadLeaderboard(from: userDefaults)
+        self.solvedPuzzleIDs = Self.loadSolvedPuzzleIDs(from: userDefaults)
         self.boardState = Array(
             repeating: Array(repeating: .empty, count: config.boardSize),
             count: config.boardSize
@@ -62,6 +65,15 @@ final class GameViewModel: ObservableObject {
 
     func leaderboardEntries(for boardSize: PuzzleBoardSize) -> [LeaderboardEntry] {
         leaderboard[boardSize] ?? []
+    }
+
+    func solvedCount(for boardSize: PuzzleBoardSize) -> Int {
+        solvedPuzzleIDs[boardSize]?.count ?? 0
+    }
+
+    func completionRatio(for boardSize: PuzzleBoardSize) -> Double {
+        let total = max(PuzzleLibrary.puzzleCount(for: boardSize), 1)
+        return min(Double(solvedCount(for: boardSize)) / Double(total), 1)
     }
 
     var starCount: Int {
@@ -152,11 +164,20 @@ final class GameViewModel: ObservableObject {
     }
 
     func startNewSession(boardSize: PuzzleBoardSize, difficulty: PuzzleDifficulty) {
+        let previousBoardSize = currentBoardSize
+        let previousPuzzleID = puzzles.indices.contains(puzzleIndex) ? puzzles[puzzleIndex].id : nil
+        let shouldAdvanceFromCurrent = boardSize == previousBoardSize && boardHasProgress
+
         currentBoardSize = boardSize
         currentDifficulty = difficulty
         config = GameConfig(starsPerUnit: config.starsPerUnit, boardSize: boardSize.rawValue)
         puzzles = PuzzleLibrary.puzzles(for: difficulty, boardSize: boardSize)
-        loadPuzzle(at: 0)
+        let startIndex = preferredStartIndex(
+            for: boardSize,
+            previousPuzzleID: previousPuzzleID,
+            shouldAdvanceFromCurrent: shouldAdvanceFromCurrent
+        )
+        loadPuzzle(at: startIndex)
     }
 
     func checkProgress() {
@@ -218,6 +239,31 @@ final class GameViewModel: ObservableObject {
         message = ""
     }
 
+    private var boardHasProgress: Bool {
+        boardState.flatMap { $0 }.contains { $0 != .empty }
+    }
+
+    private func preferredStartIndex(
+        for boardSize: PuzzleBoardSize,
+        previousPuzzleID: String?,
+        shouldAdvanceFromCurrent: Bool
+    ) -> Int {
+        guard !puzzles.isEmpty else { return 0 }
+
+        if shouldAdvanceFromCurrent,
+           let previousPuzzleID,
+           let previousIndex = puzzles.firstIndex(where: { $0.id == previousPuzzleID }) {
+            return (previousIndex + 1) % puzzles.count
+        }
+
+        let solvedIDs = solvedPuzzleIDs[boardSize] ?? []
+        if let unsolvedIndex = puzzles.firstIndex(where: { !solvedIDs.contains($0.id) }) {
+            return unsolvedIndex
+        }
+
+        return 0
+    }
+
     private func updateSolvedState() {
         let validation = validateBoard()
         if validation.solved {
@@ -229,6 +275,7 @@ final class GameViewModel: ObservableObject {
             invalidCells.removeAll()
             if !wasSolved {
                 recordSolvedTime(elapsed)
+                recordSolvedPuzzle()
             }
         } else {
             status = ""
@@ -301,6 +348,13 @@ final class GameViewModel: ObservableObject {
         saveLeaderboard()
     }
 
+    private func recordSolvedPuzzle() {
+        var ids = solvedPuzzleIDs[currentBoardSize] ?? []
+        ids.insert(currentPuzzle.id)
+        solvedPuzzleIDs[currentBoardSize] = ids
+        saveSolvedPuzzleIDs()
+    }
+
     private func saveLeaderboard() {
         let payload = Dictionary(
             uniqueKeysWithValues: leaderboard.map { key, value in
@@ -309,6 +363,16 @@ final class GameViewModel: ObservableObject {
         )
         guard let data = try? JSONEncoder().encode(payload) else { return }
         userDefaults.set(data, forKey: StorageKeys.leaderboard)
+    }
+
+    private func saveSolvedPuzzleIDs() {
+        let payload = Dictionary(
+            uniqueKeysWithValues: solvedPuzzleIDs.map { key, value in
+                (String(key.rawValue), Array(value).sorted())
+            }
+        )
+        guard let data = try? JSONEncoder().encode(payload) else { return }
+        userDefaults.set(data, forKey: StorageKeys.solvedPuzzleIDs)
     }
 
     private static func loadLeaderboard(from userDefaults: UserDefaults) -> [PuzzleBoardSize: [LeaderboardEntry]] {
@@ -325,6 +389,24 @@ final class GameViewModel: ObservableObject {
                 continue
             }
             result[boardSize] = entries.sorted { $0.duration < $1.duration }
+        }
+        return result
+    }
+
+    private static func loadSolvedPuzzleIDs(from userDefaults: UserDefaults) -> [PuzzleBoardSize: Set<String>] {
+        guard
+            let data = userDefaults.data(forKey: StorageKeys.solvedPuzzleIDs),
+            let payload = try? JSONDecoder().decode([String: [String]].self, from: data)
+        else {
+            return [:]
+        }
+
+        var result: [PuzzleBoardSize: Set<String>] = [:]
+        for (rawSize, ids) in payload {
+            guard let sizeValue = Int(rawSize), let boardSize = PuzzleBoardSize(rawValue: sizeValue) else {
+                continue
+            }
+            result[boardSize] = Set(ids)
         }
         return result
     }
