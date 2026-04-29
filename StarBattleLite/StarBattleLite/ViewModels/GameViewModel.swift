@@ -4,8 +4,48 @@ import Foundation
 final class GameViewModel: ObservableObject {
     private enum StorageKeys {
         static let autoMarkEnabled = "starbattle.autoMarkEnabled"
+        static let colorRegionsEnabled = "starbattle.colorRegionsEnabled"
         static let leaderboard = "starbattle.leaderboard"
         static let solvedPuzzleIDs = "starbattle.solvedPuzzleIDs"
+        static let activeSession = "starbattle.activeSession"
+        static let puzzleOrder = "starbattle.puzzleOrder"
+    }
+
+    private struct ActiveSessionSnapshot: Codable {
+        let boardSize: Int
+        let starsPerUnit: Int
+        let difficulty: String
+        let puzzleID: String
+        let boardState: [[CellState]]
+        let startedAt: Date
+
+        private enum CodingKeys: String, CodingKey {
+            case boardSize
+            case starsPerUnit
+            case difficulty
+            case puzzleID
+            case boardState
+            case startedAt
+        }
+
+        init(boardSize: Int, starsPerUnit: Int, difficulty: String, puzzleID: String, boardState: [[CellState]], startedAt: Date) {
+            self.boardSize = boardSize
+            self.starsPerUnit = starsPerUnit
+            self.difficulty = difficulty
+            self.puzzleID = puzzleID
+            self.boardState = boardState
+            self.startedAt = startedAt
+        }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            boardSize = try container.decode(Int.self, forKey: .boardSize)
+            starsPerUnit = try container.decodeIfPresent(Int.self, forKey: .starsPerUnit) ?? 1
+            difficulty = try container.decode(String.self, forKey: .difficulty)
+            puzzleID = try container.decode(String.self, forKey: .puzzleID)
+            boardState = try container.decode([[CellState]].self, forKey: .boardState)
+            startedAt = try container.decode(Date.self, forKey: .startedAt)
+        }
     }
 
     @Published private(set) var config: GameConfig
@@ -17,11 +57,13 @@ final class GameViewModel: ObservableObject {
     @Published var message: String = ""
     @Published var status: String = ""
     @Published var autoMarkEnabled: Bool
+    @Published var colorRegionsEnabled: Bool
     @Published private(set) var invalidCells: Set<CellPosition> = []
+    @Published private(set) var hintCells: Set<CellPosition> = []
     @Published private(set) var canUndo: Bool = false
     @Published private(set) var lastSolvedDurationText: String = ""
-    @Published private(set) var leaderboard: [PuzzleBoardSize: [LeaderboardEntry]]
-    @Published private(set) var solvedPuzzleIDs: [PuzzleBoardSize: Set<String>]
+    @Published private(set) var leaderboard: [GameStyle: [LeaderboardEntry]]
+    @Published private(set) var solvedPuzzleIDs: [GameStyle: Set<String>]
 
     private var history: [[[CellState]]] = []
     private var lastTapPosition: CellPosition?
@@ -31,20 +73,30 @@ final class GameViewModel: ObservableObject {
 
     init(
         config: GameConfig = .oneStar,
-        puzzles: [Puzzle] = PuzzleLibrary.puzzles(for: .easy, boardSize: .six),
+        puzzles: [Puzzle] = PuzzleLibrary.puzzles(for: .easy, boardSize: .six, starsPerUnit: 1),
         userDefaults: UserDefaults = .standard
     ) {
         self.userDefaults = userDefaults
         self.config = config
         self.puzzles = puzzles
         self.autoMarkEnabled = userDefaults.bool(forKey: StorageKeys.autoMarkEnabled)
+        self.colorRegionsEnabled = userDefaults.bool(forKey: StorageKeys.colorRegionsEnabled)
         self.leaderboard = Self.loadLeaderboard(from: userDefaults)
         self.solvedPuzzleIDs = Self.loadSolvedPuzzleIDs(from: userDefaults)
+        let initialPuzzles = Self.orderedPuzzles(
+            from: puzzles,
+            for: GameStyle(boardSize: .six, starsPerUnit: config.starsPerUnit),
+            difficulty: .easy,
+            userDefaults: userDefaults
+        )
+        self.puzzles = initialPuzzles
         self.boardState = Array(
             repeating: Array(repeating: .empty, count: config.boardSize),
             count: config.boardSize
         )
-        loadPuzzle(at: 0)
+        if !restoreActiveSessionIfPossible() {
+            loadPuzzle(at: preferredStartIndex(for: .six))
+        }
     }
 
     var currentPuzzle: Puzzle {
@@ -53,27 +105,34 @@ final class GameViewModel: ObservableObject {
 
     var availableDifficultyCounts: [PuzzleDifficulty: Int] {
         Dictionary(uniqueKeysWithValues: PuzzleDifficulty.allCases.map { difficulty in
-            (difficulty, PuzzleLibrary.puzzleCount(for: difficulty, boardSize: currentBoardSize))
+            (difficulty, PuzzleLibrary.puzzleCount(for: difficulty, boardSize: currentBoardSize, starsPerUnit: config.starsPerUnit))
         })
     }
 
-    var availableBoardCounts: [PuzzleBoardSize: Int] {
+    func availableBoardCounts(for starsPerUnit: Int) -> [PuzzleBoardSize: Int] {
         Dictionary(uniqueKeysWithValues: PuzzleBoardSize.allCases.map { boardSize in
-            (boardSize, PuzzleLibrary.puzzleCount(for: boardSize))
+            (boardSize, PuzzleLibrary.puzzleCount(for: boardSize, starsPerUnit: starsPerUnit))
         })
     }
 
-    func leaderboardEntries(for boardSize: PuzzleBoardSize) -> [LeaderboardEntry] {
-        leaderboard[boardSize] ?? []
+    func leaderboardEntries(for style: GameStyle) -> [LeaderboardEntry] {
+        leaderboard[style] ?? []
     }
 
-    func solvedCount(for boardSize: PuzzleBoardSize) -> Int {
-        solvedPuzzleIDs[boardSize]?.count ?? 0
+    func bestTimeText(for boardSize: PuzzleBoardSize, starsPerUnit: Int) -> String? {
+        let style = GameStyle(boardSize: boardSize, starsPerUnit: starsPerUnit)
+        guard let duration = leaderboard[style]?.first?.duration else { return nil }
+        return Self.formatDuration(duration)
     }
 
-    func completionRatio(for boardSize: PuzzleBoardSize) -> Double {
-        let total = max(PuzzleLibrary.puzzleCount(for: boardSize), 1)
-        return min(Double(solvedCount(for: boardSize)) / Double(total), 1)
+    func solvedCount(for boardSize: PuzzleBoardSize, starsPerUnit: Int) -> Int {
+        let style = GameStyle(boardSize: boardSize, starsPerUnit: starsPerUnit)
+        return solvedPuzzleIDs[style]?.count ?? 0
+    }
+
+    func completionRatio(for boardSize: PuzzleBoardSize, starsPerUnit: Int) -> Double {
+        let total = max(PuzzleLibrary.puzzleCount(for: boardSize, starsPerUnit: starsPerUnit), 1)
+        return min(Double(solvedCount(for: boardSize, starsPerUnit: starsPerUnit)) / Double(total), 1)
     }
 
     var starCount: Int {
@@ -88,12 +147,33 @@ final class GameViewModel: ObservableObject {
         currentPuzzle.size * config.starsPerUnit
     }
 
+    var isCurrentPuzzleSolved: Bool {
+        status == "Solved"
+    }
+
+    var hasActiveSession: Bool {
+        loadActiveSession() != nil
+    }
+
+    var activeSessionStyle: GameStyle? {
+        guard let snapshot = loadActiveSession(),
+              let boardSize = PuzzleBoardSize(rawValue: snapshot.boardSize) else {
+            return nil
+        }
+        return GameStyle(boardSize: boardSize, starsPerUnit: snapshot.starsPerUnit)
+    }
+
+    func discardActiveSession() {
+        clearActiveSession()
+    }
+
     func toggleStar(at position: CellPosition) {
         saveHistory()
         let current = boardState[position.row][position.column]
         boardState[position.row][position.column] = current == .star ? .empty : .star
 
         invalidCells.removeAll()
+        hintCells.removeAll()
         lastTapPosition = nil
         if autoMarkEnabled {
             applyAutoMarks()
@@ -107,6 +187,7 @@ final class GameViewModel: ObservableObject {
         boardState[position.row][position.column] = current == .marked ? .empty : .marked
 
         invalidCells.removeAll()
+        hintCells.removeAll()
         lastTapPosition = nil
         updateSolvedState()
     }
@@ -125,6 +206,7 @@ final class GameViewModel: ObservableObject {
         let current = boardState[position.row][position.column]
         boardState[position.row][position.column] = current == .marked ? .empty : .marked
         invalidCells.removeAll()
+        hintCells.removeAll()
         updateSolvedState()
         lastTapPosition = position
         lastTapTime = now
@@ -134,6 +216,8 @@ final class GameViewModel: ObservableObject {
         guard boardState[position.row][position.column] == .empty else { return }
         boardState[position.row][position.column] = .marked
         invalidCells.removeAll()
+        hintCells.removeAll()
+        persistSessionIfNeeded()
     }
 
     func setAutoMarkEnabled(_ enabled: Bool) {
@@ -146,38 +230,54 @@ final class GameViewModel: ObservableObject {
         }
     }
 
+    func setColorRegionsEnabled(_ enabled: Bool) {
+        colorRegionsEnabled = enabled
+        userDefaults.set(enabled, forKey: StorageKeys.colorRegionsEnabled)
+    }
+
     func resetBoard() {
         history.removeAll()
         boardState = Self.emptyBoard(size: currentPuzzle.size)
         invalidCells.removeAll()
+        hintCells.removeAll()
         status = ""
         canUndo = false
         lastSolvedDurationText = ""
         lastTapPosition = nil
         puzzleStartTime = Date()
         message = ""
+        clearActiveSession()
     }
 
     func loadNextPuzzle() {
-        let nextIndex = (puzzleIndex + 1) % puzzles.count
+        guard isCurrentPuzzleSolved else { return }
+        let nextIndex = nextPuzzleIndex(after: puzzleIndex)
         loadPuzzle(at: nextIndex)
     }
 
-    func startNewSession(boardSize: PuzzleBoardSize, difficulty: PuzzleDifficulty) {
-        let previousBoardSize = currentBoardSize
-        let previousPuzzleID = puzzles.indices.contains(puzzleIndex) ? puzzles[puzzleIndex].id : nil
-        let shouldAdvanceFromCurrent = boardSize == previousBoardSize && boardHasProgress
+    func startNewSession(boardSize: PuzzleBoardSize, difficulty: PuzzleDifficulty, starsPerUnit: Int) {
+        if let snapshot = loadActiveSession(),
+           let snapshotSize = PuzzleBoardSize(rawValue: snapshot.boardSize),
+           snapshotSize == boardSize,
+           snapshot.starsPerUnit == starsPerUnit,
+           restore(snapshot: snapshot, difficulty: difficulty) {
+            return
+        }
+
+        if loadActiveSession() != nil {
+            clearActiveSession()
+        }
 
         currentBoardSize = boardSize
         currentDifficulty = difficulty
-        config = GameConfig(starsPerUnit: config.starsPerUnit, boardSize: boardSize.rawValue)
-        puzzles = PuzzleLibrary.puzzles(for: difficulty, boardSize: boardSize)
-        let startIndex = preferredStartIndex(
-            for: boardSize,
-            previousPuzzleID: previousPuzzleID,
-            shouldAdvanceFromCurrent: shouldAdvanceFromCurrent
+        config = GameConfig(starsPerUnit: starsPerUnit, boardSize: boardSize.rawValue)
+        puzzles = Self.orderedPuzzles(
+            from: PuzzleLibrary.puzzles(for: difficulty, boardSize: boardSize, starsPerUnit: starsPerUnit),
+            for: GameStyle(boardSize: boardSize, starsPerUnit: starsPerUnit),
+            difficulty: difficulty,
+            userDefaults: userDefaults
         )
-        loadPuzzle(at: startIndex)
+        loadPuzzle(at: preferredStartIndex(for: boardSize))
     }
 
     func checkProgress() {
@@ -192,37 +292,34 @@ final class GameViewModel: ObservableObject {
             message = "Highlighted stars break the rules. Adjust those placements first."
         } else {
             status = ""
-            message = "No direct conflicts yet. Try the single-cell regions first."
+            message = "No direct conflicts yet. Keep narrowing rows, columns, and regions."
         }
     }
 
     func useHint() {
-        guard let hintPosition = currentPuzzle.solution.first(where: { boardState[$0.row][$0.column] != .star }) else {
-            message = "All solution stars are already placed."
+        invalidCells.removeAll()
+        hintCells.removeAll()
+
+        if let hint = nextHint() {
+            hintCells = hint.cells
+            message = hint.message
             return
         }
 
-        saveHistory()
-        boardState[hintPosition.row][hintPosition.column] = .star
-        invalidCells.removeAll()
-        if autoMarkEnabled {
-            applyAutoMarks()
-        }
-        updateSolvedState()
-        if status != "Solved" {
-            message = ""
-        }
+        message = "No clear deduction right now. Try checking rows and regions with the fewest open cells."
     }
 
     func undo() {
         guard let previous = history.popLast() else { return }
         boardState = previous
         invalidCells.removeAll()
+        hintCells.removeAll()
         canUndo = !history.isEmpty
         lastTapPosition = nil
         let validation = validateBoard()
         status = validation.solved ? "Solved" : ""
         message = ""
+        persistSessionIfNeeded()
     }
 
     private func loadPuzzle(at index: Int) {
@@ -231,37 +328,47 @@ final class GameViewModel: ObservableObject {
         boardState = Self.emptyBoard(size: puzzles[index].size)
         history.removeAll()
         invalidCells.removeAll()
+        hintCells.removeAll()
         canUndo = false
         status = ""
         lastSolvedDurationText = ""
         lastTapPosition = nil
         puzzleStartTime = Date()
         message = ""
+        clearActiveSession()
     }
 
     private var boardHasProgress: Bool {
         boardState.flatMap { $0 }.contains { $0 != .empty }
     }
 
-    private func preferredStartIndex(
-        for boardSize: PuzzleBoardSize,
-        previousPuzzleID: String?,
-        shouldAdvanceFromCurrent: Bool
-    ) -> Int {
+    private var currentStyle: GameStyle {
+        GameStyle(boardSize: currentBoardSize, starsPerUnit: config.starsPerUnit)
+    }
+
+    private func preferredStartIndex(for boardSize: PuzzleBoardSize) -> Int {
         guard !puzzles.isEmpty else { return 0 }
 
-        if shouldAdvanceFromCurrent,
-           let previousPuzzleID,
-           let previousIndex = puzzles.firstIndex(where: { $0.id == previousPuzzleID }) {
-            return (previousIndex + 1) % puzzles.count
-        }
-
-        let solvedIDs = solvedPuzzleIDs[boardSize] ?? []
+        let solvedIDs = solvedPuzzleIDs[currentStyle] ?? []
         if let unsolvedIndex = puzzles.firstIndex(where: { !solvedIDs.contains($0.id) }) {
             return unsolvedIndex
         }
 
         return 0
+    }
+
+    private func nextPuzzleIndex(after index: Int) -> Int {
+        guard !puzzles.isEmpty else { return 0 }
+
+        let solvedIDs = solvedPuzzleIDs[currentStyle] ?? []
+        for offset in 1...puzzles.count {
+            let nextIndex = (index + offset) % puzzles.count
+            if !solvedIDs.contains(puzzles[nextIndex].id) {
+                return nextIndex
+            }
+        }
+
+        return (index + 1) % puzzles.count
     }
 
     private func updateSolvedState() {
@@ -273,12 +380,15 @@ final class GameViewModel: ObservableObject {
             lastSolvedDurationText = Self.formatDuration(elapsed)
             message = ""
             invalidCells.removeAll()
+            hintCells.removeAll()
             if !wasSolved {
                 recordSolvedTime(elapsed)
                 recordSolvedPuzzle()
             }
+            clearActiveSession()
         } else {
             status = ""
+            persistSessionIfNeeded()
         }
     }
 
@@ -294,6 +404,7 @@ final class GameViewModel: ObservableObject {
             boardState[position.row][position.column] = .star
         }
         invalidCells.removeAll()
+        hintCells.removeAll()
         if autoMarkEnabled {
             applyAutoMarks()
         }
@@ -341,24 +452,243 @@ final class GameViewModel: ObservableObject {
 
     private func recordSolvedTime(_ duration: TimeInterval) {
         let entry = LeaderboardEntry(duration: duration)
-        var entries = leaderboard[currentBoardSize] ?? []
+        var entries = leaderboard[currentStyle] ?? []
         entries.append(entry)
         entries.sort { $0.duration < $1.duration }
-        leaderboard[currentBoardSize] = Array(entries.prefix(5))
+        leaderboard[currentStyle] = Array(entries.prefix(5))
         saveLeaderboard()
     }
 
     private func recordSolvedPuzzle() {
-        var ids = solvedPuzzleIDs[currentBoardSize] ?? []
+        var ids = solvedPuzzleIDs[currentStyle] ?? []
         ids.insert(currentPuzzle.id)
-        solvedPuzzleIDs[currentBoardSize] = ids
+        solvedPuzzleIDs[currentStyle] = ids
         saveSolvedPuzzleIDs()
+    }
+
+    private func persistSessionIfNeeded() {
+        guard boardHasProgress, !isCurrentPuzzleSolved else {
+            clearActiveSession()
+            return
+        }
+
+        let snapshot = ActiveSessionSnapshot(
+            boardSize: currentBoardSize.rawValue,
+            starsPerUnit: config.starsPerUnit,
+            difficulty: currentDifficulty.rawValue,
+            puzzleID: currentPuzzle.id,
+            boardState: boardState,
+            startedAt: puzzleStartTime
+        )
+
+        guard let data = try? JSONEncoder().encode(snapshot) else { return }
+        userDefaults.set(data, forKey: StorageKeys.activeSession)
+    }
+
+    private func clearActiveSession() {
+        userDefaults.removeObject(forKey: StorageKeys.activeSession)
+    }
+
+    private func loadActiveSession() -> ActiveSessionSnapshot? {
+        guard
+            let data = userDefaults.data(forKey: StorageKeys.activeSession),
+            let snapshot = try? JSONDecoder().decode(ActiveSessionSnapshot.self, from: data)
+        else {
+            return nil
+        }
+        return snapshot
+    }
+
+    private func restoreActiveSessionIfPossible() -> Bool {
+        guard let snapshot = loadActiveSession(),
+              let boardSize = PuzzleBoardSize(rawValue: snapshot.boardSize),
+              let difficulty = PuzzleDifficulty(rawValue: snapshot.difficulty) else {
+            return false
+        }
+
+        return restore(snapshot: snapshot, difficulty: difficulty, fallbackBoardSize: boardSize)
+    }
+
+    private func restore(
+        snapshot: ActiveSessionSnapshot,
+        difficulty: PuzzleDifficulty,
+        fallbackBoardSize: PuzzleBoardSize? = nil
+    ) -> Bool {
+        let boardSize = fallbackBoardSize ?? PuzzleBoardSize(rawValue: snapshot.boardSize) ?? currentBoardSize
+        let style = GameStyle(boardSize: boardSize, starsPerUnit: snapshot.starsPerUnit)
+        let ordered = Self.orderedPuzzles(
+            from: PuzzleLibrary.puzzles(for: difficulty, boardSize: boardSize, starsPerUnit: snapshot.starsPerUnit),
+            for: style,
+            difficulty: difficulty,
+            userDefaults: userDefaults
+        )
+        guard let index = ordered.firstIndex(where: { $0.id == snapshot.puzzleID }) else {
+            clearActiveSession()
+            return false
+        }
+
+        currentBoardSize = boardSize
+        currentDifficulty = difficulty
+        config = GameConfig(starsPerUnit: snapshot.starsPerUnit, boardSize: boardSize.rawValue)
+        puzzles = ordered
+        puzzleIndex = index
+        boardState = snapshot.boardState
+        history.removeAll()
+        invalidCells.removeAll()
+        hintCells.removeAll()
+        canUndo = false
+        status = validateBoard().solved ? "Solved" : ""
+        lastSolvedDurationText = ""
+        lastTapPosition = nil
+        puzzleStartTime = snapshot.startedAt
+        message = ""
+        return true
+    }
+
+    private static func orderedPuzzles(
+        from puzzles: [Puzzle],
+        for style: GameStyle,
+        difficulty: PuzzleDifficulty,
+        userDefaults: UserDefaults
+    ) -> [Puzzle] {
+        guard !puzzles.isEmpty else { return [] }
+
+        // Keep the first copy of each ID so stale duplicate entries in the
+        // generated bank don't crash startup when we build the lookup table.
+        var uniquePuzzles: [Puzzle] = []
+        var seenIDs = Set<String>()
+        for puzzle in puzzles where seenIDs.insert(puzzle.id).inserted {
+            uniquePuzzles.append(puzzle)
+        }
+
+        let orderKey = "\(style.storageKey)-\(difficulty.rawValue)"
+        let savedOrders = loadPuzzleOrders(from: userDefaults)
+        let currentIDs = Set(uniquePuzzles.map(\.id))
+        let legacyKey = style.starsPerUnit == 1 && difficulty == .easy ? String(style.boardSize.rawValue) : nil
+        let savedOrder = (savedOrders[orderKey] ?? legacyKey.flatMap { savedOrders[$0] } ?? []).filter { currentIDs.contains($0) }
+        let missingIDs = currentIDs.subtracting(savedOrder).shuffled()
+        let finalOrder = savedOrder + missingIDs
+        savePuzzleOrder(finalOrder, for: orderKey, in: userDefaults)
+
+        let lookup = Dictionary(uniqueKeysWithValues: uniquePuzzles.map { ($0.id, $0) })
+        return finalOrder.compactMap { lookup[$0] }
+    }
+
+    private static func loadPuzzleOrders(from userDefaults: UserDefaults) -> [String: [String]] {
+        guard
+            let data = userDefaults.data(forKey: StorageKeys.puzzleOrder),
+            let payload = try? JSONDecoder().decode([String: [String]].self, from: data)
+        else {
+            return [:]
+        }
+        return payload
+    }
+
+    private static func savePuzzleOrder(_ order: [String], for key: String, in userDefaults: UserDefaults) {
+        var payload = loadPuzzleOrders(from: userDefaults)
+        payload[key] = order
+        guard let data = try? JSONEncoder().encode(payload) else { return }
+        userDefaults.set(data, forKey: StorageKeys.puzzleOrder)
+    }
+
+    private struct HintSuggestion {
+        let cells: Set<CellPosition>
+        let message: String
+    }
+
+    private func nextHint() -> HintSuggestion? {
+        let candidates = candidateMap()
+
+        let regionIDs = Array(Set(currentPuzzle.regions.flatMap { $0 })).sorted()
+        for regionID in regionIDs where !regionHasQuota(regionID) {
+            let regionCandidates = candidates
+                .filter { currentPuzzle.regions[$0.key.row][$0.key.column] == regionID }
+                .map(\.key)
+            if regionCandidates.count == 1, let cell = regionCandidates.first {
+                return HintSuggestion(
+                    cells: [cell],
+                    message: "This region has only one possible star left."
+                )
+            }
+        }
+
+        for row in 0..<currentPuzzle.size where !rowHasQuota(row) {
+            let rowCandidates = candidates.keys.filter { $0.row == row }
+            if rowCandidates.count == 1, let cell = rowCandidates.first {
+                return HintSuggestion(
+                    cells: [cell],
+                    message: "Row \(row + 1) has only one legal place for its star."
+                )
+            }
+        }
+
+        for column in 0..<currentPuzzle.size where !columnHasQuota(column) {
+            let columnCandidates = candidates.keys.filter { $0.column == column }
+            if columnCandidates.count == 1, let cell = columnCandidates.first {
+                return HintSuggestion(
+                    cells: [cell],
+                    message: "Column \(column + 1) has only one legal place for its star."
+                )
+            }
+        }
+
+        for row in 0..<currentPuzzle.size {
+            for column in 0..<currentPuzzle.size {
+                let position = CellPosition(row: row, column: column)
+                guard boardState[row][column] == .empty else { continue }
+                if !isLegalStarPosition(position) {
+                    return HintSuggestion(
+                        cells: [position],
+                        message: "This cell can't hold a star. Mark it with an X."
+                    )
+                }
+            }
+        }
+
+        return nil
+    }
+
+    private func candidateMap() -> [CellPosition: Bool] {
+        var candidates: [CellPosition: Bool] = [:]
+        for row in 0..<currentPuzzle.size {
+            for column in 0..<currentPuzzle.size {
+                let position = CellPosition(row: row, column: column)
+                guard boardState[row][column] != .star else { continue }
+                if isLegalStarPosition(position) {
+                    candidates[position] = true
+                }
+            }
+        }
+        return candidates
+    }
+
+    private func isLegalStarPosition(_ position: CellPosition) -> Bool {
+        if boardState[position.row][position.column] == .star {
+            return true
+        }
+
+        if rowHasQuota(position.row) || columnHasQuota(position.column) {
+            return false
+        }
+
+        let regionID = currentPuzzle.regions[position.row][position.column]
+        if regionHasQuota(regionID) {
+            return false
+        }
+
+        for star in starPositions {
+            if abs(star.row - position.row) <= 1 && abs(star.column - position.column) <= 1 {
+                return false
+            }
+        }
+
+        return true
     }
 
     private func saveLeaderboard() {
         let payload = Dictionary(
             uniqueKeysWithValues: leaderboard.map { key, value in
-                (String(key.rawValue), value)
+                (key.storageKey, value)
             }
         )
         guard let data = try? JSONEncoder().encode(payload) else { return }
@@ -368,14 +698,14 @@ final class GameViewModel: ObservableObject {
     private func saveSolvedPuzzleIDs() {
         let payload = Dictionary(
             uniqueKeysWithValues: solvedPuzzleIDs.map { key, value in
-                (String(key.rawValue), Array(value).sorted())
+                (key.storageKey, Array(value).sorted())
             }
         )
         guard let data = try? JSONEncoder().encode(payload) else { return }
         userDefaults.set(data, forKey: StorageKeys.solvedPuzzleIDs)
     }
 
-    private static func loadLeaderboard(from userDefaults: UserDefaults) -> [PuzzleBoardSize: [LeaderboardEntry]] {
+    private static func loadLeaderboard(from userDefaults: UserDefaults) -> [GameStyle: [LeaderboardEntry]] {
         guard
             let data = userDefaults.data(forKey: StorageKeys.leaderboard),
             let payload = try? JSONDecoder().decode([String: [LeaderboardEntry]].self, from: data)
@@ -383,17 +713,24 @@ final class GameViewModel: ObservableObject {
             return [:]
         }
 
-        var result: [PuzzleBoardSize: [LeaderboardEntry]] = [:]
-        for (rawSize, entries) in payload {
-            guard let sizeValue = Int(rawSize), let boardSize = PuzzleBoardSize(rawValue: sizeValue) else {
+        var result: [GameStyle: [LeaderboardEntry]] = [:]
+        for (rawKey, entries) in payload {
+            if let style = GameStyle.fromStorageKey(rawKey) {
+                result[style] = entries.sorted { $0.duration < $1.duration }
                 continue
             }
-            result[boardSize] = entries.sorted { $0.duration < $1.duration }
+
+            guard let sizeValue = Int(rawKey), let boardSize = PuzzleBoardSize(rawValue: sizeValue) else {
+                continue
+            }
+
+            let style = GameStyle(boardSize: boardSize, starsPerUnit: 1)
+            result[style] = entries.sorted { $0.duration < $1.duration }
         }
         return result
     }
 
-    private static func loadSolvedPuzzleIDs(from userDefaults: UserDefaults) -> [PuzzleBoardSize: Set<String>] {
+    private static func loadSolvedPuzzleIDs(from userDefaults: UserDefaults) -> [GameStyle: Set<String>] {
         guard
             let data = userDefaults.data(forKey: StorageKeys.solvedPuzzleIDs),
             let payload = try? JSONDecoder().decode([String: [String]].self, from: data)
@@ -401,12 +738,19 @@ final class GameViewModel: ObservableObject {
             return [:]
         }
 
-        var result: [PuzzleBoardSize: Set<String>] = [:]
-        for (rawSize, ids) in payload {
-            guard let sizeValue = Int(rawSize), let boardSize = PuzzleBoardSize(rawValue: sizeValue) else {
+        var result: [GameStyle: Set<String>] = [:]
+        for (rawKey, ids) in payload {
+            if let style = GameStyle.fromStorageKey(rawKey) {
+                result[style] = Set(ids)
                 continue
             }
-            result[boardSize] = Set(ids)
+
+            guard let sizeValue = Int(rawKey), let boardSize = PuzzleBoardSize(rawValue: sizeValue) else {
+                continue
+            }
+
+            let style = GameStyle(boardSize: boardSize, starsPerUnit: 1)
+            result[style] = Set(ids)
         }
         return result
     }

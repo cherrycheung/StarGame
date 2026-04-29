@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-16T00:00:00Z",
+  "generatedAt": "2026-04-26T06:06:13.872Z",
   "starsPerUnit": 1,
   "sizes": [
     6,
@@ -39230,9 +39230,2500 @@
           "forcedChoices": 11,
           "ratingScore": 0.75
         }
+      },
+      {
+        "id": "2s-8-easy-001",
+        "name": "Twin Orbit 8-1",
+        "size": 8,
+        "starsPerUnit": 2,
+        "difficulty": "easy",
+        "regions": [
+          [
+            "F",
+            "F",
+            "F",
+            "F",
+            "F",
+            "C",
+            "C",
+            "A"
+          ],
+          [
+            "F",
+            "B",
+            "F",
+            "F",
+            "C",
+            "C",
+            "C",
+            "A"
+          ],
+          [
+            "D",
+            "B",
+            "C",
+            "C",
+            "C",
+            "A",
+            "A",
+            "A"
+          ],
+          [
+            "D",
+            "B",
+            "B",
+            "B",
+            "A",
+            "A",
+            "G",
+            "G"
+          ],
+          [
+            "D",
+            "D",
+            "B",
+            "B",
+            "H",
+            "A",
+            "G",
+            "G"
+          ],
+          [
+            "D",
+            "D",
+            "B",
+            "H",
+            "H",
+            "H",
+            "G",
+            "G"
+          ],
+          [
+            "D",
+            "E",
+            "E",
+            "E",
+            "E",
+            "H",
+            "G",
+            "G"
+          ],
+          [
+            "D",
+            "E",
+            "E",
+            "E",
+            "E",
+            "H",
+            "H",
+            "H"
+          ]
+        ],
+        "solution": [
+          {
+            "row": 0,
+            "column": 1
+          },
+          {
+            "row": 0,
+            "column": 3
+          },
+          {
+            "row": 1,
+            "column": 5
+          },
+          {
+            "row": 1,
+            "column": 7
+          },
+          {
+            "row": 2,
+            "column": 1
+          },
+          {
+            "row": 2,
+            "column": 3
+          },
+          {
+            "row": 3,
+            "column": 5
+          },
+          {
+            "row": 3,
+            "column": 7
+          },
+          {
+            "row": 4,
+            "column": 0
+          },
+          {
+            "row": 4,
+            "column": 2
+          },
+          {
+            "row": 5,
+            "column": 4
+          },
+          {
+            "row": 5,
+            "column": 6
+          },
+          {
+            "row": 6,
+            "column": 0
+          },
+          {
+            "row": 6,
+            "column": 2
+          },
+          {
+            "row": 7,
+            "column": 4
+          },
+          {
+            "row": 7,
+            "column": 6
+          }
+        ]
+      },
+      {
+        "id": "2s-8-easy-002",
+        "name": "Twin Lattice 8-2",
+        "size": 8,
+        "starsPerUnit": 2,
+        "difficulty": "easy",
+        "regions": [
+          [
+            "D",
+            "D",
+            "D",
+            "D",
+            "D",
+            "D",
+            "F",
+            "F"
+          ],
+          [
+            "E",
+            "E",
+            "D",
+            "D",
+            "B",
+            "B",
+            "B",
+            "F"
+          ],
+          [
+            "E",
+            "E",
+            "B",
+            "B",
+            "B",
+            "C",
+            "F",
+            "F"
+          ],
+          [
+            "E",
+            "E",
+            "H",
+            "B",
+            "B",
+            "C",
+            "F",
+            "F"
+          ],
+          [
+            "E",
+            "E",
+            "H",
+            "H",
+            "A",
+            "C",
+            "C",
+            "F"
+          ],
+          [
+            "H",
+            "H",
+            "H",
+            "A",
+            "A",
+            "A",
+            "C",
+            "C"
+          ],
+          [
+            "H",
+            "G",
+            "G",
+            "G",
+            "G",
+            "A",
+            "C",
+            "C"
+          ],
+          [
+            "H",
+            "G",
+            "G",
+            "G",
+            "G",
+            "A",
+            "A",
+            "A"
+          ]
+        ],
+        "solution": [
+          {
+            "row": 1,
+            "column": 7
+          },
+          {
+            "row": 3,
+            "column": 7
+          },
+          {
+            "row": 5,
+            "column": 6
+          },
+          {
+            "row": 7,
+            "column": 6
+          },
+          {
+            "row": 1,
+            "column": 5
+          },
+          {
+            "row": 3,
+            "column": 5
+          },
+          {
+            "row": 5,
+            "column": 4
+          },
+          {
+            "row": 7,
+            "column": 4
+          },
+          {
+            "row": 0,
+            "column": 3
+          },
+          {
+            "row": 2,
+            "column": 3
+          },
+          {
+            "row": 4,
+            "column": 2
+          },
+          {
+            "row": 6,
+            "column": 2
+          },
+          {
+            "row": 0,
+            "column": 1
+          },
+          {
+            "row": 2,
+            "column": 1
+          },
+          {
+            "row": 4,
+            "column": 0
+          },
+          {
+            "row": 6,
+            "column": 0
+          }
+        ]
+      },
+      {
+        "id": "2s-8-easy-003",
+        "name": "Twin Vector 8-3",
+        "size": 8,
+        "starsPerUnit": 2,
+        "difficulty": "easy",
+        "regions": [
+          [
+            "H",
+            "H",
+            "H",
+            "E",
+            "E",
+            "E",
+            "E",
+            "D"
+          ],
+          [
+            "G",
+            "G",
+            "H",
+            "E",
+            "E",
+            "E",
+            "E",
+            "D"
+          ],
+          [
+            "G",
+            "G",
+            "H",
+            "H",
+            "H",
+            "B",
+            "D",
+            "D"
+          ],
+          [
+            "G",
+            "G",
+            "A",
+            "H",
+            "B",
+            "B",
+            "D",
+            "D"
+          ],
+          [
+            "G",
+            "G",
+            "A",
+            "A",
+            "B",
+            "B",
+            "B",
+            "D"
+          ],
+          [
+            "A",
+            "A",
+            "A",
+            "C",
+            "C",
+            "C",
+            "B",
+            "D"
+          ],
+          [
+            "A",
+            "C",
+            "C",
+            "C",
+            "F",
+            "F",
+            "B",
+            "F"
+          ],
+          [
+            "A",
+            "C",
+            "C",
+            "F",
+            "F",
+            "F",
+            "F",
+            "F"
+          ]
+        ],
+        "solution": [
+          {
+            "row": 7,
+            "column": 6
+          },
+          {
+            "row": 7,
+            "column": 4
+          },
+          {
+            "row": 6,
+            "column": 2
+          },
+          {
+            "row": 6,
+            "column": 0
+          },
+          {
+            "row": 5,
+            "column": 6
+          },
+          {
+            "row": 5,
+            "column": 4
+          },
+          {
+            "row": 4,
+            "column": 2
+          },
+          {
+            "row": 4,
+            "column": 0
+          },
+          {
+            "row": 3,
+            "column": 7
+          },
+          {
+            "row": 3,
+            "column": 5
+          },
+          {
+            "row": 2,
+            "column": 3
+          },
+          {
+            "row": 2,
+            "column": 1
+          },
+          {
+            "row": 1,
+            "column": 7
+          },
+          {
+            "row": 1,
+            "column": 5
+          },
+          {
+            "row": 0,
+            "column": 3
+          },
+          {
+            "row": 0,
+            "column": 1
+          }
+        ]
+      },
+      {
+        "id": "2s-8-easy-004",
+        "name": "Twin Signal 8-4",
+        "size": 8,
+        "starsPerUnit": 2,
+        "difficulty": "easy",
+        "regions": [
+          [
+            "A",
+            "A",
+            "A",
+            "G",
+            "G",
+            "G",
+            "G",
+            "H"
+          ],
+          [
+            "C",
+            "C",
+            "A",
+            "G",
+            "G",
+            "G",
+            "G",
+            "H"
+          ],
+          [
+            "C",
+            "C",
+            "A",
+            "A",
+            "A",
+            "H",
+            "H",
+            "H"
+          ],
+          [
+            "F",
+            "C",
+            "C",
+            "A",
+            "H",
+            "H",
+            "E",
+            "E"
+          ],
+          [
+            "F",
+            "F",
+            "C",
+            "B",
+            "B",
+            "H",
+            "E",
+            "E"
+          ],
+          [
+            "F",
+            "F",
+            "C",
+            "B",
+            "B",
+            "B",
+            "E",
+            "E"
+          ],
+          [
+            "F",
+            "B",
+            "B",
+            "B",
+            "D",
+            "D",
+            "E",
+            "E"
+          ],
+          [
+            "F",
+            "F",
+            "D",
+            "D",
+            "D",
+            "D",
+            "D",
+            "D"
+          ]
+        ],
+        "solution": [
+          {
+            "row": 6,
+            "column": 0
+          },
+          {
+            "row": 4,
+            "column": 0
+          },
+          {
+            "row": 2,
+            "column": 1
+          },
+          {
+            "row": 0,
+            "column": 1
+          },
+          {
+            "row": 6,
+            "column": 2
+          },
+          {
+            "row": 4,
+            "column": 2
+          },
+          {
+            "row": 2,
+            "column": 3
+          },
+          {
+            "row": 0,
+            "column": 3
+          },
+          {
+            "row": 7,
+            "column": 4
+          },
+          {
+            "row": 5,
+            "column": 4
+          },
+          {
+            "row": 3,
+            "column": 5
+          },
+          {
+            "row": 1,
+            "column": 5
+          },
+          {
+            "row": 7,
+            "column": 6
+          },
+          {
+            "row": 5,
+            "column": 6
+          },
+          {
+            "row": 3,
+            "column": 7
+          },
+          {
+            "row": 1,
+            "column": 7
+          }
+        ]
+      },
+      {
+        "id": "2s-8-easy-005",
+        "name": "Twin Halo 8-5",
+        "size": 8,
+        "starsPerUnit": 2,
+        "difficulty": "easy",
+        "regions": [
+          [
+            "A",
+            "C",
+            "C",
+            "F",
+            "F",
+            "F",
+            "F",
+            "F"
+          ],
+          [
+            "A",
+            "C",
+            "C",
+            "C",
+            "F",
+            "F",
+            "B",
+            "F"
+          ],
+          [
+            "A",
+            "A",
+            "A",
+            "C",
+            "C",
+            "C",
+            "B",
+            "D"
+          ],
+          [
+            "G",
+            "G",
+            "A",
+            "A",
+            "B",
+            "B",
+            "B",
+            "D"
+          ],
+          [
+            "G",
+            "G",
+            "A",
+            "H",
+            "B",
+            "B",
+            "D",
+            "D"
+          ],
+          [
+            "G",
+            "G",
+            "H",
+            "H",
+            "H",
+            "B",
+            "D",
+            "D"
+          ],
+          [
+            "G",
+            "G",
+            "H",
+            "E",
+            "E",
+            "E",
+            "E",
+            "D"
+          ],
+          [
+            "H",
+            "H",
+            "H",
+            "E",
+            "E",
+            "E",
+            "E",
+            "D"
+          ]
+        ],
+        "solution": [
+          {
+            "row": 0,
+            "column": 6
+          },
+          {
+            "row": 0,
+            "column": 4
+          },
+          {
+            "row": 1,
+            "column": 2
+          },
+          {
+            "row": 1,
+            "column": 0
+          },
+          {
+            "row": 2,
+            "column": 6
+          },
+          {
+            "row": 2,
+            "column": 4
+          },
+          {
+            "row": 3,
+            "column": 2
+          },
+          {
+            "row": 3,
+            "column": 0
+          },
+          {
+            "row": 4,
+            "column": 7
+          },
+          {
+            "row": 4,
+            "column": 5
+          },
+          {
+            "row": 5,
+            "column": 3
+          },
+          {
+            "row": 5,
+            "column": 1
+          },
+          {
+            "row": 6,
+            "column": 7
+          },
+          {
+            "row": 6,
+            "column": 5
+          },
+          {
+            "row": 7,
+            "column": 3
+          },
+          {
+            "row": 7,
+            "column": 1
+          }
+        ]
+      },
+      {
+        "id": "2s-8-easy-006",
+        "name": "Twin Beacon 8-6",
+        "size": 8,
+        "starsPerUnit": 2,
+        "difficulty": "easy",
+        "regions": [
+          [
+            "D",
+            "E",
+            "E",
+            "E",
+            "E",
+            "H",
+            "H",
+            "H"
+          ],
+          [
+            "D",
+            "E",
+            "E",
+            "E",
+            "E",
+            "H",
+            "G",
+            "G"
+          ],
+          [
+            "D",
+            "D",
+            "B",
+            "H",
+            "H",
+            "H",
+            "G",
+            "G"
+          ],
+          [
+            "D",
+            "D",
+            "B",
+            "B",
+            "H",
+            "A",
+            "G",
+            "G"
+          ],
+          [
+            "D",
+            "B",
+            "B",
+            "B",
+            "A",
+            "A",
+            "G",
+            "G"
+          ],
+          [
+            "D",
+            "B",
+            "C",
+            "C",
+            "C",
+            "A",
+            "A",
+            "A"
+          ],
+          [
+            "F",
+            "B",
+            "F",
+            "F",
+            "C",
+            "C",
+            "C",
+            "A"
+          ],
+          [
+            "F",
+            "F",
+            "F",
+            "F",
+            "F",
+            "C",
+            "C",
+            "A"
+          ]
+        ],
+        "solution": [
+          {
+            "row": 7,
+            "column": 1
+          },
+          {
+            "row": 7,
+            "column": 3
+          },
+          {
+            "row": 6,
+            "column": 5
+          },
+          {
+            "row": 6,
+            "column": 7
+          },
+          {
+            "row": 5,
+            "column": 1
+          },
+          {
+            "row": 5,
+            "column": 3
+          },
+          {
+            "row": 4,
+            "column": 5
+          },
+          {
+            "row": 4,
+            "column": 7
+          },
+          {
+            "row": 3,
+            "column": 0
+          },
+          {
+            "row": 3,
+            "column": 2
+          },
+          {
+            "row": 2,
+            "column": 4
+          },
+          {
+            "row": 2,
+            "column": 6
+          },
+          {
+            "row": 1,
+            "column": 0
+          },
+          {
+            "row": 1,
+            "column": 2
+          },
+          {
+            "row": 0,
+            "column": 4
+          },
+          {
+            "row": 0,
+            "column": 6
+          }
+        ]
+      },
+      {
+        "id": "2s-8-easy-007",
+        "name": "Twin Pulsar 8-7",
+        "size": 8,
+        "starsPerUnit": 2,
+        "difficulty": "easy",
+        "regions": [
+          [
+            "F",
+            "F",
+            "D",
+            "D",
+            "D",
+            "D",
+            "D",
+            "D"
+          ],
+          [
+            "F",
+            "B",
+            "B",
+            "B",
+            "D",
+            "D",
+            "E",
+            "E"
+          ],
+          [
+            "F",
+            "F",
+            "C",
+            "B",
+            "B",
+            "B",
+            "E",
+            "E"
+          ],
+          [
+            "F",
+            "F",
+            "C",
+            "B",
+            "B",
+            "H",
+            "E",
+            "E"
+          ],
+          [
+            "F",
+            "C",
+            "C",
+            "A",
+            "H",
+            "H",
+            "E",
+            "E"
+          ],
+          [
+            "C",
+            "C",
+            "A",
+            "A",
+            "A",
+            "H",
+            "H",
+            "H"
+          ],
+          [
+            "C",
+            "C",
+            "A",
+            "G",
+            "G",
+            "G",
+            "G",
+            "H"
+          ],
+          [
+            "A",
+            "A",
+            "A",
+            "G",
+            "G",
+            "G",
+            "G",
+            "H"
+          ]
+        ],
+        "solution": [
+          {
+            "row": 1,
+            "column": 0
+          },
+          {
+            "row": 3,
+            "column": 0
+          },
+          {
+            "row": 5,
+            "column": 1
+          },
+          {
+            "row": 7,
+            "column": 1
+          },
+          {
+            "row": 1,
+            "column": 2
+          },
+          {
+            "row": 3,
+            "column": 2
+          },
+          {
+            "row": 5,
+            "column": 3
+          },
+          {
+            "row": 7,
+            "column": 3
+          },
+          {
+            "row": 0,
+            "column": 4
+          },
+          {
+            "row": 2,
+            "column": 4
+          },
+          {
+            "row": 4,
+            "column": 5
+          },
+          {
+            "row": 6,
+            "column": 5
+          },
+          {
+            "row": 0,
+            "column": 6
+          },
+          {
+            "row": 2,
+            "column": 6
+          },
+          {
+            "row": 4,
+            "column": 7
+          },
+          {
+            "row": 6,
+            "column": 7
+          }
+        ]
+      },
+      {
+        "id": "2s-8-easy-008",
+        "name": "Twin Anchor 8-8",
+        "size": 8,
+        "starsPerUnit": 2,
+        "difficulty": "easy",
+        "regions": [
+          [
+            "H",
+            "G",
+            "G",
+            "G",
+            "G",
+            "A",
+            "A",
+            "A"
+          ],
+          [
+            "H",
+            "G",
+            "G",
+            "G",
+            "G",
+            "A",
+            "C",
+            "C"
+          ],
+          [
+            "H",
+            "H",
+            "H",
+            "A",
+            "A",
+            "A",
+            "C",
+            "C"
+          ],
+          [
+            "E",
+            "E",
+            "H",
+            "H",
+            "A",
+            "C",
+            "C",
+            "F"
+          ],
+          [
+            "E",
+            "E",
+            "H",
+            "B",
+            "B",
+            "C",
+            "F",
+            "F"
+          ],
+          [
+            "E",
+            "E",
+            "B",
+            "B",
+            "B",
+            "C",
+            "F",
+            "F"
+          ],
+          [
+            "E",
+            "E",
+            "D",
+            "D",
+            "B",
+            "B",
+            "B",
+            "F"
+          ],
+          [
+            "D",
+            "D",
+            "D",
+            "D",
+            "D",
+            "D",
+            "F",
+            "F"
+          ]
+        ],
+        "solution": [
+          {
+            "row": 6,
+            "column": 7
+          },
+          {
+            "row": 4,
+            "column": 7
+          },
+          {
+            "row": 2,
+            "column": 6
+          },
+          {
+            "row": 0,
+            "column": 6
+          },
+          {
+            "row": 6,
+            "column": 5
+          },
+          {
+            "row": 4,
+            "column": 5
+          },
+          {
+            "row": 2,
+            "column": 4
+          },
+          {
+            "row": 0,
+            "column": 4
+          },
+          {
+            "row": 7,
+            "column": 3
+          },
+          {
+            "row": 5,
+            "column": 3
+          },
+          {
+            "row": 3,
+            "column": 2
+          },
+          {
+            "row": 1,
+            "column": 2
+          },
+          {
+            "row": 7,
+            "column": 1
+          },
+          {
+            "row": 5,
+            "column": 1
+          },
+          {
+            "row": 3,
+            "column": 0
+          },
+          {
+            "row": 1,
+            "column": 0
+          }
+        ]
+      },
+      {
+        "id": "2s-8-easy-009",
+        "name": "Twin Orbit 8-9",
+        "size": 8,
+        "starsPerUnit": 2,
+        "difficulty": "easy",
+        "regions": [
+          [
+            "B",
+            "B",
+            "B",
+            "D",
+            "D",
+            "D",
+            "D",
+            "H"
+          ],
+          [
+            "F",
+            "B",
+            "B",
+            "D",
+            "D",
+            "D",
+            "H",
+            "H"
+          ],
+          [
+            "F",
+            "F",
+            "B",
+            "B",
+            "D",
+            "E",
+            "H",
+            "H"
+          ],
+          [
+            "C",
+            "F",
+            "F",
+            "B",
+            "E",
+            "E",
+            "E",
+            "H"
+          ],
+          [
+            "C",
+            "F",
+            "F",
+            "F",
+            "A",
+            "E",
+            "E",
+            "H"
+          ],
+          [
+            "C",
+            "C",
+            "A",
+            "A",
+            "A",
+            "E",
+            "E",
+            "H"
+          ],
+          [
+            "C",
+            "C",
+            "A",
+            "A",
+            "A",
+            "G",
+            "G",
+            "G"
+          ],
+          [
+            "C",
+            "C",
+            "A",
+            "G",
+            "G",
+            "G",
+            "G",
+            "G"
+          ]
+        ],
+        "solution": [
+          {
+            "row": 0,
+            "column": 1
+          },
+          {
+            "row": 0,
+            "column": 3
+          },
+          {
+            "row": 1,
+            "column": 5
+          },
+          {
+            "row": 1,
+            "column": 7
+          },
+          {
+            "row": 2,
+            "column": 1
+          },
+          {
+            "row": 2,
+            "column": 3
+          },
+          {
+            "row": 3,
+            "column": 5
+          },
+          {
+            "row": 3,
+            "column": 7
+          },
+          {
+            "row": 4,
+            "column": 0
+          },
+          {
+            "row": 4,
+            "column": 2
+          },
+          {
+            "row": 5,
+            "column": 4
+          },
+          {
+            "row": 5,
+            "column": 6
+          },
+          {
+            "row": 6,
+            "column": 0
+          },
+          {
+            "row": 6,
+            "column": 2
+          },
+          {
+            "row": 7,
+            "column": 4
+          },
+          {
+            "row": 7,
+            "column": 6
+          }
+        ]
+      },
+      {
+        "id": "2s-8-easy-010",
+        "name": "Twin Lattice 8-10",
+        "size": 8,
+        "starsPerUnit": 2,
+        "difficulty": "easy",
+        "regions": [
+          [
+            "C",
+            "C",
+            "C",
+            "C",
+            "C",
+            "F",
+            "F",
+            "B"
+          ],
+          [
+            "C",
+            "C",
+            "C",
+            "F",
+            "F",
+            "F",
+            "B",
+            "B"
+          ],
+          [
+            "A",
+            "A",
+            "A",
+            "F",
+            "F",
+            "B",
+            "B",
+            "B"
+          ],
+          [
+            "G",
+            "A",
+            "A",
+            "F",
+            "B",
+            "B",
+            "D",
+            "D"
+          ],
+          [
+            "G",
+            "A",
+            "A",
+            "A",
+            "E",
+            "D",
+            "D",
+            "D"
+          ],
+          [
+            "G",
+            "G",
+            "E",
+            "E",
+            "E",
+            "E",
+            "D",
+            "D"
+          ],
+          [
+            "G",
+            "G",
+            "E",
+            "E",
+            "E",
+            "H",
+            "H",
+            "D"
+          ],
+          [
+            "G",
+            "G",
+            "H",
+            "H",
+            "H",
+            "H",
+            "H",
+            "H"
+          ]
+        ],
+        "solution": [
+          {
+            "row": 1,
+            "column": 7
+          },
+          {
+            "row": 3,
+            "column": 7
+          },
+          {
+            "row": 5,
+            "column": 6
+          },
+          {
+            "row": 7,
+            "column": 6
+          },
+          {
+            "row": 1,
+            "column": 5
+          },
+          {
+            "row": 3,
+            "column": 5
+          },
+          {
+            "row": 5,
+            "column": 4
+          },
+          {
+            "row": 7,
+            "column": 4
+          },
+          {
+            "row": 0,
+            "column": 3
+          },
+          {
+            "row": 2,
+            "column": 3
+          },
+          {
+            "row": 4,
+            "column": 2
+          },
+          {
+            "row": 6,
+            "column": 2
+          },
+          {
+            "row": 0,
+            "column": 1
+          },
+          {
+            "row": 2,
+            "column": 1
+          },
+          {
+            "row": 4,
+            "column": 0
+          },
+          {
+            "row": 6,
+            "column": 0
+          }
+        ]
+      },
+      {
+        "id": "2s-8-easy-011",
+        "name": "Twin Vector 8-11",
+        "size": 8,
+        "starsPerUnit": 2,
+        "difficulty": "easy",
+        "regions": [
+          [
+            "G",
+            "G",
+            "G",
+            "G",
+            "G",
+            "A",
+            "C",
+            "C"
+          ],
+          [
+            "G",
+            "G",
+            "G",
+            "A",
+            "A",
+            "A",
+            "C",
+            "C"
+          ],
+          [
+            "H",
+            "E",
+            "E",
+            "A",
+            "A",
+            "A",
+            "C",
+            "C"
+          ],
+          [
+            "H",
+            "E",
+            "E",
+            "A",
+            "F",
+            "F",
+            "F",
+            "C"
+          ],
+          [
+            "H",
+            "E",
+            "E",
+            "E",
+            "B",
+            "F",
+            "F",
+            "C"
+          ],
+          [
+            "H",
+            "H",
+            "E",
+            "D",
+            "B",
+            "B",
+            "F",
+            "F"
+          ],
+          [
+            "H",
+            "H",
+            "D",
+            "D",
+            "D",
+            "B",
+            "B",
+            "F"
+          ],
+          [
+            "H",
+            "D",
+            "D",
+            "D",
+            "D",
+            "B",
+            "B",
+            "B"
+          ]
+        ],
+        "solution": [
+          {
+            "row": 7,
+            "column": 6
+          },
+          {
+            "row": 7,
+            "column": 4
+          },
+          {
+            "row": 6,
+            "column": 2
+          },
+          {
+            "row": 6,
+            "column": 0
+          },
+          {
+            "row": 5,
+            "column": 6
+          },
+          {
+            "row": 5,
+            "column": 4
+          },
+          {
+            "row": 4,
+            "column": 2
+          },
+          {
+            "row": 4,
+            "column": 0
+          },
+          {
+            "row": 3,
+            "column": 7
+          },
+          {
+            "row": 3,
+            "column": 5
+          },
+          {
+            "row": 2,
+            "column": 3
+          },
+          {
+            "row": 2,
+            "column": 1
+          },
+          {
+            "row": 1,
+            "column": 7
+          },
+          {
+            "row": 1,
+            "column": 5
+          },
+          {
+            "row": 0,
+            "column": 3
+          },
+          {
+            "row": 0,
+            "column": 1
+          }
+        ]
+      },
+      {
+        "id": "2s-8-easy-012",
+        "name": "Twin Signal 8-12",
+        "size": 8,
+        "starsPerUnit": 2,
+        "difficulty": "easy",
+        "regions": [
+          [
+            "H",
+            "H",
+            "H",
+            "H",
+            "H",
+            "H",
+            "G",
+            "G"
+          ],
+          [
+            "D",
+            "H",
+            "H",
+            "E",
+            "E",
+            "E",
+            "G",
+            "G"
+          ],
+          [
+            "D",
+            "D",
+            "E",
+            "E",
+            "E",
+            "E",
+            "G",
+            "G"
+          ],
+          [
+            "D",
+            "D",
+            "D",
+            "E",
+            "A",
+            "A",
+            "A",
+            "G"
+          ],
+          [
+            "D",
+            "D",
+            "B",
+            "B",
+            "F",
+            "A",
+            "A",
+            "G"
+          ],
+          [
+            "B",
+            "B",
+            "B",
+            "F",
+            "F",
+            "A",
+            "A",
+            "A"
+          ],
+          [
+            "B",
+            "B",
+            "F",
+            "F",
+            "F",
+            "C",
+            "C",
+            "C"
+          ],
+          [
+            "B",
+            "F",
+            "F",
+            "C",
+            "C",
+            "C",
+            "C",
+            "C"
+          ]
+        ],
+        "solution": [
+          {
+            "row": 6,
+            "column": 0
+          },
+          {
+            "row": 4,
+            "column": 0
+          },
+          {
+            "row": 2,
+            "column": 1
+          },
+          {
+            "row": 0,
+            "column": 1
+          },
+          {
+            "row": 6,
+            "column": 2
+          },
+          {
+            "row": 4,
+            "column": 2
+          },
+          {
+            "row": 2,
+            "column": 3
+          },
+          {
+            "row": 0,
+            "column": 3
+          },
+          {
+            "row": 7,
+            "column": 4
+          },
+          {
+            "row": 5,
+            "column": 4
+          },
+          {
+            "row": 3,
+            "column": 5
+          },
+          {
+            "row": 1,
+            "column": 5
+          },
+          {
+            "row": 7,
+            "column": 6
+          },
+          {
+            "row": 5,
+            "column": 6
+          },
+          {
+            "row": 3,
+            "column": 7
+          },
+          {
+            "row": 1,
+            "column": 7
+          }
+        ]
+      },
+      {
+        "id": "2s-8-easy-013",
+        "name": "Twin Halo 8-13",
+        "size": 8,
+        "starsPerUnit": 2,
+        "difficulty": "easy",
+        "regions": [
+          [
+            "H",
+            "D",
+            "D",
+            "D",
+            "D",
+            "B",
+            "B",
+            "B"
+          ],
+          [
+            "H",
+            "H",
+            "D",
+            "D",
+            "D",
+            "B",
+            "B",
+            "F"
+          ],
+          [
+            "H",
+            "H",
+            "E",
+            "D",
+            "B",
+            "B",
+            "F",
+            "F"
+          ],
+          [
+            "H",
+            "E",
+            "E",
+            "E",
+            "B",
+            "F",
+            "F",
+            "C"
+          ],
+          [
+            "H",
+            "E",
+            "E",
+            "A",
+            "F",
+            "F",
+            "F",
+            "C"
+          ],
+          [
+            "H",
+            "E",
+            "E",
+            "A",
+            "A",
+            "A",
+            "C",
+            "C"
+          ],
+          [
+            "G",
+            "G",
+            "G",
+            "A",
+            "A",
+            "A",
+            "C",
+            "C"
+          ],
+          [
+            "G",
+            "G",
+            "G",
+            "G",
+            "G",
+            "A",
+            "C",
+            "C"
+          ]
+        ],
+        "solution": [
+          {
+            "row": 0,
+            "column": 6
+          },
+          {
+            "row": 0,
+            "column": 4
+          },
+          {
+            "row": 1,
+            "column": 2
+          },
+          {
+            "row": 1,
+            "column": 0
+          },
+          {
+            "row": 2,
+            "column": 6
+          },
+          {
+            "row": 2,
+            "column": 4
+          },
+          {
+            "row": 3,
+            "column": 2
+          },
+          {
+            "row": 3,
+            "column": 0
+          },
+          {
+            "row": 4,
+            "column": 7
+          },
+          {
+            "row": 4,
+            "column": 5
+          },
+          {
+            "row": 5,
+            "column": 3
+          },
+          {
+            "row": 5,
+            "column": 1
+          },
+          {
+            "row": 6,
+            "column": 7
+          },
+          {
+            "row": 6,
+            "column": 5
+          },
+          {
+            "row": 7,
+            "column": 3
+          },
+          {
+            "row": 7,
+            "column": 1
+          }
+        ]
+      },
+      {
+        "id": "2s-8-easy-014",
+        "name": "Twin Beacon 8-14",
+        "size": 8,
+        "starsPerUnit": 2,
+        "difficulty": "easy",
+        "regions": [
+          [
+            "C",
+            "C",
+            "A",
+            "G",
+            "G",
+            "G",
+            "G",
+            "G"
+          ],
+          [
+            "C",
+            "C",
+            "A",
+            "A",
+            "A",
+            "G",
+            "G",
+            "G"
+          ],
+          [
+            "C",
+            "C",
+            "A",
+            "A",
+            "A",
+            "E",
+            "E",
+            "H"
+          ],
+          [
+            "C",
+            "F",
+            "F",
+            "F",
+            "A",
+            "E",
+            "E",
+            "H"
+          ],
+          [
+            "C",
+            "F",
+            "F",
+            "B",
+            "E",
+            "E",
+            "E",
+            "H"
+          ],
+          [
+            "F",
+            "F",
+            "B",
+            "B",
+            "D",
+            "E",
+            "H",
+            "H"
+          ],
+          [
+            "F",
+            "B",
+            "B",
+            "D",
+            "D",
+            "D",
+            "H",
+            "H"
+          ],
+          [
+            "B",
+            "B",
+            "B",
+            "D",
+            "D",
+            "D",
+            "D",
+            "H"
+          ]
+        ],
+        "solution": [
+          {
+            "row": 7,
+            "column": 1
+          },
+          {
+            "row": 7,
+            "column": 3
+          },
+          {
+            "row": 6,
+            "column": 5
+          },
+          {
+            "row": 6,
+            "column": 7
+          },
+          {
+            "row": 5,
+            "column": 1
+          },
+          {
+            "row": 5,
+            "column": 3
+          },
+          {
+            "row": 4,
+            "column": 5
+          },
+          {
+            "row": 4,
+            "column": 7
+          },
+          {
+            "row": 3,
+            "column": 0
+          },
+          {
+            "row": 3,
+            "column": 2
+          },
+          {
+            "row": 2,
+            "column": 4
+          },
+          {
+            "row": 2,
+            "column": 6
+          },
+          {
+            "row": 1,
+            "column": 0
+          },
+          {
+            "row": 1,
+            "column": 2
+          },
+          {
+            "row": 0,
+            "column": 4
+          },
+          {
+            "row": 0,
+            "column": 6
+          }
+        ]
+      },
+      {
+        "id": "2s-8-easy-015",
+        "name": "Twin Pulsar 8-15",
+        "size": 8,
+        "starsPerUnit": 2,
+        "difficulty": "easy",
+        "regions": [
+          [
+            "B",
+            "F",
+            "F",
+            "C",
+            "C",
+            "C",
+            "C",
+            "C"
+          ],
+          [
+            "B",
+            "B",
+            "F",
+            "F",
+            "F",
+            "C",
+            "C",
+            "C"
+          ],
+          [
+            "B",
+            "B",
+            "B",
+            "F",
+            "F",
+            "A",
+            "A",
+            "A"
+          ],
+          [
+            "D",
+            "D",
+            "B",
+            "B",
+            "F",
+            "A",
+            "A",
+            "G"
+          ],
+          [
+            "D",
+            "D",
+            "D",
+            "E",
+            "A",
+            "A",
+            "A",
+            "G"
+          ],
+          [
+            "D",
+            "D",
+            "E",
+            "E",
+            "E",
+            "E",
+            "G",
+            "G"
+          ],
+          [
+            "D",
+            "H",
+            "H",
+            "E",
+            "E",
+            "E",
+            "G",
+            "G"
+          ],
+          [
+            "H",
+            "H",
+            "H",
+            "H",
+            "H",
+            "H",
+            "G",
+            "G"
+          ]
+        ],
+        "solution": [
+          {
+            "row": 1,
+            "column": 0
+          },
+          {
+            "row": 3,
+            "column": 0
+          },
+          {
+            "row": 5,
+            "column": 1
+          },
+          {
+            "row": 7,
+            "column": 1
+          },
+          {
+            "row": 1,
+            "column": 2
+          },
+          {
+            "row": 3,
+            "column": 2
+          },
+          {
+            "row": 5,
+            "column": 3
+          },
+          {
+            "row": 7,
+            "column": 3
+          },
+          {
+            "row": 0,
+            "column": 4
+          },
+          {
+            "row": 2,
+            "column": 4
+          },
+          {
+            "row": 4,
+            "column": 5
+          },
+          {
+            "row": 6,
+            "column": 5
+          },
+          {
+            "row": 0,
+            "column": 6
+          },
+          {
+            "row": 2,
+            "column": 6
+          },
+          {
+            "row": 4,
+            "column": 7
+          },
+          {
+            "row": 6,
+            "column": 7
+          }
+        ]
+      },
+      {
+        "id": "2s-8-easy-016",
+        "name": "Twin Anchor 8-16",
+        "size": 8,
+        "starsPerUnit": 2,
+        "difficulty": "easy",
+        "regions": [
+          [
+            "G",
+            "G",
+            "H",
+            "H",
+            "H",
+            "H",
+            "H",
+            "H"
+          ],
+          [
+            "G",
+            "G",
+            "E",
+            "E",
+            "E",
+            "H",
+            "H",
+            "D"
+          ],
+          [
+            "G",
+            "G",
+            "E",
+            "E",
+            "E",
+            "E",
+            "D",
+            "D"
+          ],
+          [
+            "G",
+            "A",
+            "A",
+            "A",
+            "E",
+            "D",
+            "D",
+            "D"
+          ],
+          [
+            "G",
+            "A",
+            "A",
+            "F",
+            "B",
+            "B",
+            "D",
+            "D"
+          ],
+          [
+            "A",
+            "A",
+            "A",
+            "F",
+            "F",
+            "B",
+            "B",
+            "B"
+          ],
+          [
+            "C",
+            "C",
+            "C",
+            "F",
+            "F",
+            "F",
+            "B",
+            "B"
+          ],
+          [
+            "C",
+            "C",
+            "C",
+            "C",
+            "C",
+            "F",
+            "F",
+            "B"
+          ]
+        ],
+        "solution": [
+          {
+            "row": 6,
+            "column": 7
+          },
+          {
+            "row": 4,
+            "column": 7
+          },
+          {
+            "row": 2,
+            "column": 6
+          },
+          {
+            "row": 0,
+            "column": 6
+          },
+          {
+            "row": 6,
+            "column": 5
+          },
+          {
+            "row": 4,
+            "column": 5
+          },
+          {
+            "row": 2,
+            "column": 4
+          },
+          {
+            "row": 0,
+            "column": 4
+          },
+          {
+            "row": 7,
+            "column": 3
+          },
+          {
+            "row": 5,
+            "column": 3
+          },
+          {
+            "row": 3,
+            "column": 2
+          },
+          {
+            "row": 1,
+            "column": 2
+          },
+          {
+            "row": 7,
+            "column": 1
+          },
+          {
+            "row": 5,
+            "column": 1
+          },
+          {
+            "row": 3,
+            "column": 0
+          },
+          {
+            "row": 1,
+            "column": 0
+          }
+        ]
       }
     ],
     "medium": [],
     "hard": []
+  },
+  "modeCounts": {
+    "oneStar": {
+      "6": 100,
+      "8": 100,
+      "10": 100
+    },
+    "twoStar": {
+      "8": 16,
+      "10": 0
+    }
   }
 }

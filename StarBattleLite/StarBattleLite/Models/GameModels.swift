@@ -1,6 +1,6 @@
 import Foundation
 
-enum CellState: String {
+enum CellState: String, Codable {
     case empty
     case star
     case marked
@@ -11,6 +11,37 @@ struct GameConfig {
     let boardSize: Int
 
     static let oneStar = GameConfig(starsPerUnit: 1, boardSize: 6)
+}
+
+struct GameStyle: Hashable, Codable, Identifiable {
+    let boardSize: PuzzleBoardSize
+    let starsPerUnit: Int
+
+    var id: String {
+        storageKey
+    }
+
+    var title: String {
+        "\(starsPerUnit)-Star \(boardSize.title)"
+    }
+
+    var storageKey: String {
+        "\(starsPerUnit)-\(boardSize.rawValue)"
+    }
+
+    static func fromStorageKey(_ key: String) -> GameStyle? {
+        let parts = key.split(separator: "-")
+        guard
+            parts.count == 2,
+            let stars = Int(parts[0]),
+            let size = Int(parts[1]),
+            let boardSize = PuzzleBoardSize(rawValue: size)
+        else {
+            return nil
+        }
+
+        return GameStyle(boardSize: boardSize, starsPerUnit: stars)
+    }
 }
 
 enum PuzzleBoardSize: Int, CaseIterable, Codable, Identifiable {
@@ -41,6 +72,7 @@ struct Puzzle: Identifiable {
     let id: String
     let name: String
     let size: Int
+    let starsPerUnit: Int
     let difficulty: PuzzleDifficulty
     let regions: [[String]]
     let solution: [CellPosition]
@@ -91,24 +123,26 @@ private struct GeneratedPuzzle: Codable {
 enum PuzzleLibrary {
     static let puzzleBank: [PuzzleDifficulty: [Puzzle]] = loadPuzzleBank()
 
-    static func puzzles(for difficulty: PuzzleDifficulty, boardSize: PuzzleBoardSize) -> [Puzzle] {
-        let bank = (puzzleBank[difficulty] ?? []).filter { $0.size == boardSize.rawValue }
+    static func puzzles(for difficulty: PuzzleDifficulty, boardSize: PuzzleBoardSize, starsPerUnit: Int) -> [Puzzle] {
+        let bank = (puzzleBank[difficulty] ?? []).filter {
+            $0.size == boardSize.rawValue && $0.starsPerUnit == starsPerUnit
+        }
         if !bank.isEmpty {
             return bank
         }
-        if difficulty == .easy, boardSize == .six {
+        if difficulty == .easy, boardSize == .six, starsPerUnit == 1 {
             return fallbackPuzzles
         }
         return []
     }
 
-    static func puzzleCount(for difficulty: PuzzleDifficulty, boardSize: PuzzleBoardSize) -> Int {
-        puzzles(for: difficulty, boardSize: boardSize).count
+    static func puzzleCount(for difficulty: PuzzleDifficulty, boardSize: PuzzleBoardSize, starsPerUnit: Int) -> Int {
+        puzzles(for: difficulty, boardSize: boardSize, starsPerUnit: starsPerUnit).count
     }
 
-    static func puzzleCount(for boardSize: PuzzleBoardSize) -> Int {
+    static func puzzleCount(for boardSize: PuzzleBoardSize, starsPerUnit: Int) -> Int {
         PuzzleDifficulty.allCases.reduce(0) { partialResult, difficulty in
-            partialResult + puzzleCount(for: difficulty, boardSize: boardSize)
+            partialResult + puzzleCount(for: difficulty, boardSize: boardSize, starsPerUnit: starsPerUnit)
         }
     }
 
@@ -136,6 +170,7 @@ enum PuzzleLibrary {
             id: generated.id,
             name: generated.name,
             size: generated.size,
+            starsPerUnit: generated.starsPerUnit,
             difficulty: generated.difficulty,
             regions: generated.regions,
             solution: generated.solution
@@ -147,6 +182,7 @@ enum PuzzleLibrary {
             id: "fallback-001",
             name: "Morning Drift",
             size: 6,
+            starsPerUnit: 1,
             difficulty: .easy,
             regions: [
                 ["A", "A", "C", "C", "B", "B"],
@@ -169,6 +205,7 @@ enum PuzzleLibrary {
             id: "fallback-002",
             name: "Quiet Orbit",
             size: 6,
+            starsPerUnit: 1,
             difficulty: .easy,
             regions: [
                 ["B", "B", "C", "A", "A", "A"],

@@ -16,14 +16,10 @@ private enum StarMode: Int {
     var subtitle: String {
         switch self {
         case .one:
-            return "Classic 6x6 starter board"
+            return "Classic single-star puzzles"
         case .two:
-            return "Coming soon"
+            return "Denser two-star boards"
         }
-    }
-
-    var isAvailable: Bool {
-        self == .one
     }
 }
 
@@ -34,7 +30,10 @@ struct ContentView: View {
     @State private var selectedMode: StarMode = .one
     @State private var selectedBoardSize: PuzzleBoardSize = .six
     @State private var showSettings = false
+    @State private var showRecords = false
     @State private var showSolvedCelebration = false
+    @State private var pendingStartStyle: GameStyle?
+    @State private var showSessionChoice = false
 
     var body: some View {
         NavigationStack {
@@ -61,11 +60,44 @@ struct ContentView: View {
                     autoMarkEnabled: Binding(
                         get: { viewModel.autoMarkEnabled },
                         set: { viewModel.setAutoMarkEnabled($0) }
+                    ),
+                    colorRegionsEnabled: Binding(
+                        get: { viewModel.colorRegionsEnabled },
+                        set: { viewModel.setColorRegionsEnabled($0) }
                     )
                 )
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
             }
+            .sheet(isPresented: $showRecords) {
+                BestTimesSheet(viewModel: viewModel)
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
+            }
+            .confirmationDialog(
+                sessionChoiceTitle,
+                isPresented: $showSessionChoice,
+                titleVisibility: .visible
+            ) {
+                if let activeStyle = viewModel.activeSessionStyle {
+                    Button("Resume \(activeStyle.title)") {
+                        startActiveSession(activeStyle)
+                    }
+                }
+
+                Button(startNewChoiceTitle, role: .destructive) {
+                    startSelectedGameDiscardingActiveSession()
+                }
+
+                Button("Cancel", role: .cancel) {
+                    pendingStartStyle = nil
+                }
+            } message: {
+                Text(sessionChoiceMessage)
+            }
+        }
+        .onChange(of: selectedMode) { _, _ in
+            normalizeSelectedBoardSize()
         }
     }
 
@@ -83,38 +115,23 @@ struct ContentView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            VStack(spacing: 14) {
-                ForEach([StarMode.one, StarMode.two], id: \.rawValue) { mode in
-                    Button {
-                        guard mode.isAvailable else { return }
-                        selectedMode = mode
-                    } label: {
-                        HStack(spacing: 14) {
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text(mode.title)
-                                    .font(.title3.weight(.bold))
-                                    .foregroundStyle(palette.headerText)
-                                Text(mode.subtitle)
-                                    .font(.subheadline)
-                                    .foregroundStyle(palette.bodySubtext)
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Mode")
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(palette.headerText)
+
+                HStack(spacing: 10) {
+                    ForEach([StarMode.one, StarMode.two], id: \.rawValue) { mode in
+                        SelectionChipButton(
+                            title: mode.title,
+                            subtitle: modeSubtitle(mode),
+                            isSelected: selectedMode == mode,
+                            action: {
+                                guard modeIsAvailable(mode) else { return }
+                                selectedMode = mode
                             }
-
-                            Spacer()
-
-                            Image(systemName: mode.isAvailable ? "play.fill" : "clock")
-                                .font(.title3.weight(.semibold))
-                                .foregroundStyle(mode.isAvailable ? palette.star : palette.bodySubtext)
-                        }
-                        .padding(18)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(palette.cardBackground, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                                .stroke(palette.headerBorder, lineWidth: 1)
-                        }
+                        )
                     }
-                    .buttonStyle(.plain)
-                    .disabled(!mode.isAvailable)
                 }
             }
 
@@ -125,55 +142,74 @@ struct ContentView: View {
 
                 HStack(spacing: 10) {
                     ForEach(PuzzleBoardSize.allCases) { boardSize in
-                        let count = viewModel.availableBoardCounts[boardSize, default: 0]
-                        DifficultyCard(
-                            title: boardSize.title,
-                            solvedCount: viewModel.solvedCount(for: boardSize),
-                            totalCount: count,
-                            progress: viewModel.completionRatio(for: boardSize),
-                            isSelected: selectedBoardSize == boardSize,
-                            isEnabled: count > 0 && selectedMode.isAvailable
-                        ) {
-                            guard count > 0 else { return }
-                            selectedBoardSize = boardSize
+                        if visibleBoardSizes.contains(boardSize) {
+                            SelectionChipButton(
+                                title: boardSize.title,
+                                subtitle: boardSizeSubtitle(boardSize),
+                                isSelected: selectedBoardSize == boardSize,
+                                action: {
+                                    selectedBoardSize = boardSize
+                                }
+                            )
+                            .frame(maxWidth: .infinity)
+                        } else {
+                            SelectionChipButton(
+                                title: boardSize.title,
+                                subtitle: "",
+                                isSelected: false,
+                                action: {}
+                            )
+                            .frame(maxWidth: .infinity)
+                            .hidden()
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
                         }
                     }
                 }
             }
 
             Button {
-                viewModel.startNewSession(
-                    boardSize: selectedBoardSize,
-                    difficulty: .easy
-                )
-                currentScreen = .game
+                handleStartButton()
             } label: {
-                Label("Start Game", systemImage: "play.fill")
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(palette.headerText)
+                Label(homeActionTitle, systemImage: homeActionSymbol)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(startButtonForeground)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
             }
             .buttonStyle(.plain)
-            .glassEffect(.regular.interactive())
+            .glassEffect(.regular.tint(startButtonBackground).interactive(), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .shadow(color: startButtonShadow, radius: 18, y: 10)
             .disabled(
-                PuzzleLibrary.puzzleCount(for: .easy, boardSize: selectedBoardSize) == 0 ||
-                !selectedMode.isAvailable
+                PuzzleLibrary.puzzleCount(for: .easy, boardSize: selectedBoardSize, starsPerUnit: selectedMode.rawValue) == 0 ||
+                !modeIsAvailable(selectedMode)
             )
 
-            leaderboardSection
+            HStack(spacing: 12) {
+                Button {
+                    showRecords = true
+                } label: {
+                    Label("Records", systemImage: "medal.star.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(palette.headerText)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                }
+                .buttonStyle(.plain)
+                .glassEffect(.regular.interactive())
 
-            Button {
-                showSettings = true
-            } label: {
-                Label("Settings", systemImage: "gearshape.fill")
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(palette.headerText)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
+                Button {
+                    showSettings = true
+                } label: {
+                    Label("Settings", systemImage: "gearshape.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(palette.headerText)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                }
+                .buttonStyle(.plain)
+                .glassEffect(.regular.interactive())
             }
-            .buttonStyle(.plain)
-            .glassEffect(.regular.interactive())
 
             Spacer(minLength: 0)
         }
@@ -240,6 +276,7 @@ struct ContentView: View {
                 ActionIconButton(symbol: "shuffle", title: "New") {
                     viewModel.loadNextPuzzle()
                 }
+                .disabled(!viewModel.isCurrentPuzzleSolved)
 
                 ActionIconButton(symbol: "lightbulb", title: "Hint") {
                     viewModel.useHint()
@@ -297,26 +334,131 @@ struct ContentView: View {
         AppPalette(colorScheme: colorScheme)
     }
 
-    private var leaderboardSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Best Times")
-                .font(.headline.weight(.semibold))
-                .foregroundStyle(palette.headerText)
+    private var homeActionTitle: String {
+        "Start Game"
+    }
 
-            VStack(spacing: 10) {
-                ForEach(PuzzleBoardSize.allCases) { boardSize in
-                    LeaderboardRow(
-                        title: boardSize.title,
-                        entries: viewModel.leaderboardEntries(for: boardSize)
-                    )
-                }
-            }
+    private var homeActionSymbol: String {
+        "play.fill"
+    }
+
+    private var selectedStyle: GameStyle {
+        GameStyle(boardSize: selectedBoardSize, starsPerUnit: selectedMode.rawValue)
+    }
+
+    private var visibleBoardSizes: [PuzzleBoardSize] {
+        PuzzleBoardSize.allCases.filter {
+            viewModel.availableBoardCounts(for: selectedMode.rawValue)[$0, default: 0] > 0
         }
     }
+
+    private var startButtonBackground: Color {
+        palette.star
+    }
+
+    private var startButtonForeground: Color {
+        colorScheme == .dark ? Color.black.opacity(0.86) : Color.white
+    }
+
+    private var startButtonShadow: Color {
+        palette.star.opacity(colorScheme == .dark ? 0.22 : 0.28)
+    }
+
+    private func modeIsAvailable(_ mode: StarMode) -> Bool {
+        viewModel.availableBoardCounts(for: mode.rawValue).values.contains { $0 > 0 }
+    }
+
+    private func modeSubtitle(_ mode: StarMode) -> String {
+        let counts = viewModel.availableBoardCounts(for: mode.rawValue)
+        let availableSizes = PuzzleBoardSize.allCases.filter { counts[$0, default: 0] > 0 }.map(\.title)
+        if availableSizes.isEmpty {
+            return mode.subtitle
+        }
+        return availableSizes.joined(separator: " • ")
+    }
+
+    private func normalizeSelectedBoardSize() {
+        let counts = viewModel.availableBoardCounts(for: selectedMode.rawValue)
+        guard counts[selectedBoardSize, default: 0] == 0 else { return }
+        if let firstAvailable = PuzzleBoardSize.allCases.first(where: { counts[$0, default: 0] > 0 }) {
+            selectedBoardSize = firstAvailable
+        }
+    }
+
+    private func boardSizeSubtitle(_ boardSize: PuzzleBoardSize) -> String {
+        let solved = viewModel.solvedCount(for: boardSize, starsPerUnit: selectedMode.rawValue)
+        let total = viewModel.availableBoardCounts(for: selectedMode.rawValue)[boardSize, default: 0]
+        guard solved > 0, total > 0 else {
+            return selectedMode == .two ? "Two-star" : "One-star"
+        }
+        return "\(solved)/\(total)"
+    }
+
+    private var sessionChoiceTitle: String {
+        guard let activeStyle = viewModel.activeSessionStyle else {
+            return "Unfinished Game"
+        }
+        return activeStyle == selectedStyle ? "Continue This Game?" : "Unfinished Game Found"
+    }
+
+    private var sessionChoiceMessage: String {
+        guard let activeStyle = viewModel.activeSessionStyle else {
+            return ""
+        }
+        if activeStyle == selectedStyle {
+            return "You already have an unfinished \(activeStyle.title) puzzle."
+        }
+        return "You already have an unfinished \(activeStyle.title) puzzle. Starting \(selectedStyle.title) will forfeit it."
+    }
+
+    private var startNewChoiceTitle: String {
+        guard let activeStyle = viewModel.activeSessionStyle, activeStyle == selectedStyle else {
+            return "Start \(selectedStyle.title)"
+        }
+        return "Start New \(selectedStyle.title)"
+    }
+
+    private func handleStartButton() {
+        pendingStartStyle = selectedStyle
+        guard viewModel.activeSessionStyle != nil else {
+            startSelectedGame()
+            return
+        }
+        showSessionChoice = true
+    }
+
+    private func startSelectedGame() {
+        viewModel.startNewSession(
+            boardSize: selectedBoardSize,
+            difficulty: .easy,
+            starsPerUnit: selectedMode.rawValue
+        )
+        currentScreen = .game
+        pendingStartStyle = nil
+    }
+
+    private func startSelectedGameDiscardingActiveSession() {
+        viewModel.discardActiveSession()
+        startSelectedGame()
+    }
+
+    private func startActiveSession(_ style: GameStyle) {
+        selectedMode = style.starsPerUnit == 2 ? .two : .one
+        selectedBoardSize = style.boardSize
+        viewModel.startNewSession(
+            boardSize: style.boardSize,
+            difficulty: .easy,
+            starsPerUnit: style.starsPerUnit
+        )
+        currentScreen = .game
+        pendingStartStyle = nil
+    }
+
 }
 
 private struct SettingsSheet: View {
     @Binding var autoMarkEnabled: Bool
+    @Binding var colorRegionsEnabled: Bool
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -324,16 +466,65 @@ private struct SettingsSheet: View {
             List {
                 Section("Game") {
                     Toggle("Auto X", isOn: $autoMarkEnabled)
+                    Toggle("Color Regions", isOn: $colorRegionsEnabled)
                 }
 
                 Section("How To Play") {
                     Text("Tap once for X.")
                     Text("Tap the same cell again quickly for a star.")
                     Text("Drag across the board to sweep crosses.")
-                    Text("Place one star in every row, column, and region.")
+                    Text("Place the required number of stars in every row, column, and region.")
                 }
             }
             .navigationTitle("Settings")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct BestTimesSheet: View {
+    @ObservedObject var viewModel: GameViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    private let styles: [GameStyle] = [
+        GameStyle(boardSize: .six, starsPerUnit: 1),
+        GameStyle(boardSize: .eight, starsPerUnit: 1),
+        GameStyle(boardSize: .ten, starsPerUnit: 1),
+        GameStyle(boardSize: .eight, starsPerUnit: 2),
+        GameStyle(boardSize: .ten, starsPerUnit: 2)
+    ]
+
+    var body: some View {
+        NavigationStack {
+            List {
+                ForEach(styles) { style in
+                    if PuzzleLibrary.puzzleCount(for: .easy, boardSize: style.boardSize, starsPerUnit: style.starsPerUnit) > 0 {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(style.title)
+                                    .font(.headline)
+                                Text("Easy")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            Spacer()
+
+                            Text(viewModel.bestTimeText(for: style.boardSize, starsPerUnit: style.starsPerUnit) ?? "No time")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.primary)
+                        }
+                        .padding(.vertical, 2)
+                    }
+                }
+            }
+            .navigationTitle("Best Times")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") {
@@ -366,7 +557,7 @@ private struct BoardView: View {
             ForEach(positions, id: \.self) { position in
                 ZStack {
                     Rectangle()
-                        .fill(palette.cellBackground)
+                        .fill(cellFill(for: position))
 
                     if viewModel.boardState[position.row][position.column] == .star {
                         Text("★")
@@ -389,13 +580,23 @@ private struct BoardView: View {
                         leading: needsLeadingBorder(position),
                         trailing: needsTrailingBorder(position)
                     )
-                    .stroke(palette.regionBorder, lineWidth: 3)
+                    .stroke(
+                        viewModel.colorRegionsEnabled ? palette.regionBorder.opacity(0.8) : palette.regionBorder,
+                        lineWidth: viewModel.colorRegionsEnabled ? 1.8 : 3
+                    )
                 }
                 .overlay {
                     if viewModel.invalidCells.contains(position) {
                         Rectangle()
                             .stroke(Color.red.opacity(0.8), lineWidth: 3)
                             .padding(1)
+                    }
+                }
+                .overlay {
+                    if viewModel.hintCells.contains(position) {
+                        Rectangle()
+                            .stroke(Color(red: 0.44, green: 0.82, blue: 0.98), lineWidth: 3)
+                            .padding(2)
                     }
                 }
                 .aspectRatio(1, contentMode: .fit)
@@ -459,6 +660,18 @@ private struct BoardView: View {
         viewModel.currentPuzzle.regions[position.row][position.column]
     }
 
+    private func cellFill(for position: CellPosition) -> some ShapeStyle {
+        if viewModel.colorRegionsEnabled {
+            return AnyShapeStyle(regionColor(for: regionID(position)))
+        }
+        return AnyShapeStyle(palette.cellBackground)
+    }
+
+    private func regionColor(for regionID: String) -> Color {
+        let index = max(regionID.unicodeScalars.first?.value ?? 65, 65) - 65
+        return palette.regionPalette[Int(index) % palette.regionPalette.count]
+    }
+
     private func position(for location: CGPoint, boardSide: CGFloat, size: Int) -> CellPosition? {
         guard boardSide > 0, size > 0 else { return nil }
         let cellSize = boardSide / CGFloat(size)
@@ -486,6 +699,7 @@ private struct AppPalette {
     let gridLine: Color
     let regionBorder: Color
     let outerBorder: Color
+    let regionPalette: [Color]
     let star: Color
     let mark: Color
 
@@ -501,9 +715,19 @@ private struct AppPalette {
             cardBackground = Color.white.opacity(0.08)
             bodySubtext = Color.white.opacity(0.70)
             cellBackground = Color.white.opacity(0.03)
-            gridLine = Color.white.opacity(0.10)
-            regionBorder = Color.white.opacity(0.78)
-            outerBorder = Color.white.opacity(0.22)
+            gridLine = Color.white.opacity(0.16)
+            regionBorder = Color.white.opacity(0.92)
+            outerBorder = Color.white.opacity(0.28)
+            regionPalette = [
+                Color(red: 0.24, green: 0.33, blue: 0.44),
+                Color(red: 0.37, green: 0.25, blue: 0.43),
+                Color(red: 0.20, green: 0.38, blue: 0.31),
+                Color(red: 0.43, green: 0.29, blue: 0.23),
+                Color(red: 0.25, green: 0.30, blue: 0.48),
+                Color(red: 0.44, green: 0.36, blue: 0.20),
+                Color(red: 0.19, green: 0.39, blue: 0.44),
+                Color(red: 0.43, green: 0.22, blue: 0.31)
+            ].map { $0.opacity(0.88) }
             star = Color(red: 0.98, green: 0.82, blue: 0.22)
             mark = Color.white.opacity(0.75)
         } else {
@@ -520,6 +744,16 @@ private struct AppPalette {
             gridLine = Color.black.opacity(0.10)
             regionBorder = Color.black.opacity(0.72)
             outerBorder = Color.black.opacity(0.12)
+            regionPalette = [
+                Color(red: 0.89, green: 0.93, blue: 0.98),
+                Color(red: 0.94, green: 0.90, blue: 0.98),
+                Color(red: 0.89, green: 0.96, blue: 0.92),
+                Color(red: 0.98, green: 0.92, blue: 0.89),
+                Color(red: 0.91, green: 0.92, blue: 0.99),
+                Color(red: 0.98, green: 0.95, blue: 0.88),
+                Color(red: 0.89, green: 0.96, blue: 0.97),
+                Color(red: 0.97, green: 0.90, blue: 0.93)
+            ]
             star = Color(red: 0.88, green: 0.67, blue: 0.10)
             mark = Color.black.opacity(0.55)
         }
@@ -611,13 +845,79 @@ private struct SolvedActionButtonStyle: ButtonStyle {
     }
 }
 
+private struct SelectionChipButton: View {
+    @Environment(\.colorScheme) private var colorScheme
+    let title: String
+    let subtitle: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 8) {
+                Text(title)
+                    .font(.footnote.weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                Spacer(minLength: 0)
+                Image(systemName: isSelected ? "checkmark" : "circle")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(isSelected ? selectionBadgeForeground : palette.headerSubtext)
+                    .frame(width: 22, height: 22)
+                    .background(selectionBadgeBackground, in: Circle())
+            }
+
+            Text(subtitle)
+                .font(.caption2)
+                .foregroundStyle(palette.bodySubtext)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(minHeight: 82)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .foregroundStyle(palette.headerText)
+        .contentShape(Rectangle())
+        .onTapGesture(perform: action)
+        .glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(selectionFill)
+        )
+    }
+
+    private var palette: AppPalette {
+        AppPalette(colorScheme: colorScheme)
+    }
+
+    private var selectionFill: Color {
+        if !isSelected {
+            return .clear
+        }
+        return colorScheme == .dark
+            ? Color.white.opacity(0.10)
+            : Color.black.opacity(0.06)
+    }
+    private var selectionBadgeBackground: Color {
+        isSelected ? palette.star : Color.clear
+    }
+
+    private var selectionBadgeForeground: Color {
+        colorScheme == .dark ? Color.black.opacity(0.86) : Color.white
+    }
+}
+
 private struct DifficultyCard: View {
+    @Environment(\.colorScheme) private var colorScheme
     let title: String
     let solvedCount: Int
     let totalCount: Int
     let progress: Double
     let isSelected: Bool
     let isEnabled: Bool
+    let unavailableLabel: String?
     let action: () -> Void
 
     var body: some View {
@@ -630,21 +930,27 @@ private struct DifficultyCard: View {
                     if solvedCount > 0 {
                         Text("\(solvedCount)/\(totalCount)")
                             .font(.caption2.weight(.medium))
-                            .foregroundStyle(Color.white.opacity(isEnabled ? 0.62 : 0.38))
+                            .foregroundStyle(cardMetaColor)
                     }
+                }
+
+                if let unavailableLabel, !isEnabled {
+                    Text(unavailableLabel)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(cardMetaColor)
                 }
 
                 GeometryReader { proxy in
                     ZStack(alignment: .leading) {
                         Capsule()
-                            .fill(Color.white.opacity(isEnabled ? 0.10 : 0.05))
+                            .fill(trackColor)
 
                         Capsule()
                             .fill(
                                 LinearGradient(
                                     colors: [
-                                        Color.white.opacity(isSelected ? 0.90 : 0.70),
-                                        Color.white.opacity(isSelected ? 0.55 : 0.36)
+                                        progressLeadingColor,
+                                        progressTrailingColor
                                     ],
                                     startPoint: .leading,
                                     endPoint: .trailing
@@ -658,56 +964,68 @@ private struct DifficultyCard: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 14)
             .padding(.vertical, 16)
-            .background(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(isSelected && isEnabled ? Color.white.opacity(0.18) : Color.clear)
-            )
-            .overlay {
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .stroke(
-                        isSelected && isEnabled ? Color.white.opacity(0.75) : Color.white.opacity(0.18),
-                        lineWidth: 1
-                    )
-            }
+            .foregroundStyle(cardTitleColor)
             .opacity(isEnabled ? 1 : 0.55)
         }
         .buttonStyle(.plain)
+        .glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(selectedFillColor)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(
+                    borderColor,
+                    lineWidth: 1
+                )
+        }
         .disabled(!isEnabled)
     }
-}
 
-private struct LeaderboardRow: View {
-    let title: String
-    let entries: [LeaderboardEntry]
+    private var palette: AppPalette {
+        AppPalette(colorScheme: colorScheme)
+    }
 
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-                .frame(width: 56, alignment: .leading)
+    private var cardTitleColor: Color {
+        palette.headerText
+    }
 
-            if entries.isEmpty {
-                Text("No times yet")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            } else {
-                HStack(spacing: 10) {
-                    ForEach(Array(entries.prefix(3).enumerated()), id: \.element.id) { index, entry in
-                        Text("\(index + 1). \(GameViewModel.formatDuration(entry.duration))")
-                            .font(.footnote.weight(.medium))
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
+    private var cardMetaColor: Color {
+        colorScheme == .dark ? Color.white.opacity(isEnabled ? 0.62 : 0.38) : Color.black.opacity(isEnabled ? 0.52 : 0.30)
+    }
 
-            Spacer(minLength: 0)
-        }
-        .padding(14)
-        .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+    private var selectedFillColor: Color {
+        colorScheme == .dark
+            ? (isSelected && isEnabled ? Color.white.opacity(0.18) : Color.clear)
+            : (isSelected && isEnabled ? Color.black.opacity(0.08) : Color.clear)
+    }
+
+    private var borderColor: Color {
+        colorScheme == .dark
+            ? (isSelected && isEnabled ? Color.white.opacity(0.75) : Color.white.opacity(0.18))
+            : (isSelected && isEnabled ? Color.black.opacity(0.30) : Color.black.opacity(0.10))
+    }
+
+    private var trackColor: Color {
+        colorScheme == .dark ? Color.white.opacity(isEnabled ? 0.10 : 0.05) : Color.black.opacity(isEnabled ? 0.08 : 0.04)
+    }
+
+    private var progressLeadingColor: Color {
+        colorScheme == .dark
+            ? Color.white.opacity(isSelected ? 0.90 : 0.70)
+            : Color.black.opacity(isSelected ? 0.58 : 0.38)
+    }
+
+    private var progressTrailingColor: Color {
+        colorScheme == .dark
+            ? Color.white.opacity(isSelected ? 0.55 : 0.36)
+            : Color.black.opacity(isSelected ? 0.34 : 0.22)
     }
 }
 
 private struct ActionIconButton: View {
+    @Environment(\.colorScheme) private var colorScheme
     let symbol: String
     let title: String
     let action: () -> Void
@@ -723,6 +1041,7 @@ private struct ActionIconButton: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 8)
+            .foregroundStyle(AppPalette(colorScheme: colorScheme).headerText)
         }
         .buttonStyle(.plain)
         .glassEffect(.regular.interactive())
