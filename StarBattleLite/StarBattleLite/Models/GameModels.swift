@@ -48,6 +48,7 @@ enum PuzzleBoardSize: Int, CaseIterable, Codable, Identifiable {
     case six = 6
     case eight = 8
     case ten = 10
+    case twelve = 12
 
     var id: Int { rawValue }
 

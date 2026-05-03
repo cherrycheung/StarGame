@@ -141,11 +141,10 @@ struct ContentView: View {
                     .foregroundStyle(palette.headerText)
 
                 HStack(spacing: 10) {
-                    ForEach(PuzzleBoardSize.allCases) { boardSize in
-                        if visibleBoardSizes.contains(boardSize) {
-                            SelectionChipButton(
+                    ForEach(boardSizeSlots.indices, id: \.self) { index in
+                        if let boardSize = boardSizeSlots[index] {
+                            CompactSelectionChipButton(
                                 title: boardSize.title,
-                                subtitle: boardSizeSubtitle(boardSize),
                                 isSelected: selectedBoardSize == boardSize,
                                 action: {
                                     selectedBoardSize = boardSize
@@ -153,16 +152,11 @@ struct ContentView: View {
                             )
                             .frame(maxWidth: .infinity)
                         } else {
-                            SelectionChipButton(
-                                title: boardSize.title,
-                                subtitle: "",
-                                isSelected: false,
-                                action: {}
-                            )
-                            .frame(maxWidth: .infinity)
-                            .hidden()
-                            .allowsHitTesting(false)
-                            .accessibilityHidden(true)
+                            Color.clear
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 44)
+                                .allowsHitTesting(false)
+                                .accessibilityHidden(true)
                         }
                     }
                 }
@@ -346,10 +340,22 @@ struct ContentView: View {
         GameStyle(boardSize: selectedBoardSize, starsPerUnit: selectedMode.rawValue)
     }
 
+    private var visiblePickerBoardSizes: [PuzzleBoardSize] {
+        [.six, .eight, .ten]
+    }
+
     private var visibleBoardSizes: [PuzzleBoardSize] {
-        PuzzleBoardSize.allCases.filter {
+        visiblePickerBoardSizes.filter {
             viewModel.availableBoardCounts(for: selectedMode.rawValue)[$0, default: 0] > 0
         }
+    }
+
+    private var boardSizeSlots: [PuzzleBoardSize?] {
+        let sizes = visibleBoardSizes.map(Optional.some)
+        if selectedMode == .two && sizes.count == 2 {
+            return sizes + [nil]
+        }
+        return sizes
     }
 
     private var startButtonBackground: Color {
@@ -370,7 +376,7 @@ struct ContentView: View {
 
     private func modeSubtitle(_ mode: StarMode) -> String {
         let counts = viewModel.availableBoardCounts(for: mode.rawValue)
-        let availableSizes = PuzzleBoardSize.allCases.filter { counts[$0, default: 0] > 0 }.map(\.title)
+        let availableSizes = visiblePickerBoardSizes.filter { counts[$0, default: 0] > 0 }.map(\.title)
         if availableSizes.isEmpty {
             return mode.subtitle
         }
@@ -380,18 +386,9 @@ struct ContentView: View {
     private func normalizeSelectedBoardSize() {
         let counts = viewModel.availableBoardCounts(for: selectedMode.rawValue)
         guard counts[selectedBoardSize, default: 0] == 0 else { return }
-        if let firstAvailable = PuzzleBoardSize.allCases.first(where: { counts[$0, default: 0] > 0 }) {
+        if let firstAvailable = visiblePickerBoardSizes.first(where: { counts[$0, default: 0] > 0 }) {
             selectedBoardSize = firstAvailable
         }
-    }
-
-    private func boardSizeSubtitle(_ boardSize: PuzzleBoardSize) -> String {
-        let solved = viewModel.solvedCount(for: boardSize, starsPerUnit: selectedMode.rawValue)
-        let total = viewModel.availableBoardCounts(for: selectedMode.rawValue)[boardSize, default: 0]
-        guard solved > 0, total > 0 else {
-            return selectedMode == .two ? "Two-star" : "One-star"
-        }
-        return "\(solved)/\(total)"
     }
 
     private var sessionChoiceTitle: String {
@@ -492,13 +489,11 @@ private struct BestTimesSheet: View {
     @ObservedObject var viewModel: GameViewModel
     @Environment(\.dismiss) private var dismiss
 
-    private let styles: [GameStyle] = [
-        GameStyle(boardSize: .six, starsPerUnit: 1),
-        GameStyle(boardSize: .eight, starsPerUnit: 1),
-        GameStyle(boardSize: .ten, starsPerUnit: 1),
-        GameStyle(boardSize: .eight, starsPerUnit: 2),
-        GameStyle(boardSize: .ten, starsPerUnit: 2)
-    ]
+    private var styles: [GameStyle] {
+        [PuzzleBoardSize.six, .eight, .ten].flatMap { boardSize in
+            [1, 2].map { GameStyle(boardSize: boardSize, starsPerUnit: $0) }
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -561,7 +556,7 @@ private struct BoardView: View {
 
                     if viewModel.boardState[position.row][position.column] == .star {
                         Text("★")
-                            .font(.system(size: 26, weight: .bold, design: .rounded))
+                            .font(.system(size: 22, weight: .bold, design: .rounded))
                             .foregroundStyle(palette.star)
                     } else if viewModel.boardState[position.row][position.column] == .marked {
                         Text("✕")
@@ -668,8 +663,10 @@ private struct BoardView: View {
     }
 
     private func regionColor(for regionID: String) -> Color {
-        let index = max(regionID.unicodeScalars.first?.value ?? 65, 65) - 65
-        return palette.regionPalette[Int(index) % palette.regionPalette.count]
+        let hash = regionID.unicodeScalars.reduce(0) { partial, scalar in
+            ((partial * 31) + Int(scalar.value)) & 0x7fffffff
+        }
+        return palette.regionPalette[hash % palette.regionPalette.count]
     }
 
     private func position(for location: CGPoint, boardSide: CGFloat, size: Int) -> CellPosition? {
@@ -831,8 +828,9 @@ private struct SolvedActionButtonStyle: ButtonStyle {
         configuration.label
             .font(.subheadline.weight(.semibold))
             .foregroundStyle(prominent ? Color.black.opacity(0.85) : Color.white)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
+            .frame(minWidth: 112)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 14)
             .background(
                 Group {
                     if prominent {
@@ -853,17 +851,17 @@ private struct SelectionChipButton: View {
     let action: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
+        VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 8) {
                 Text(title)
-                    .font(.footnote.weight(.semibold))
+                    .font(.caption.weight(.semibold))
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
                 Spacer(minLength: 0)
                 Image(systemName: isSelected ? "checkmark" : "circle")
-                    .font(.caption.weight(.bold))
+                    .font(.system(size: 10, weight: .bold))
                     .foregroundStyle(isSelected ? selectionBadgeForeground : palette.headerSubtext)
-                    .frame(width: 22, height: 22)
+                    .frame(width: 18, height: 18)
                     .background(selectionBadgeBackground, in: Circle())
             }
 
@@ -875,9 +873,9 @@ private struct SelectionChipButton: View {
         }
         .frame(maxWidth: .infinity)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(minHeight: 82)
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .frame(minHeight: 66)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
         .foregroundStyle(palette.headerText)
         .contentShape(Rectangle())
         .onTapGesture(perform: action)
@@ -900,6 +898,62 @@ private struct SelectionChipButton: View {
             ? Color.white.opacity(0.10)
             : Color.black.opacity(0.06)
     }
+    private var selectionBadgeBackground: Color {
+        isSelected ? palette.star : Color.clear
+    }
+
+    private var selectionBadgeForeground: Color {
+        colorScheme == .dark ? Color.black.opacity(0.86) : Color.white
+    }
+}
+
+private struct CompactSelectionChipButton: View {
+    @Environment(\.colorScheme) private var colorScheme
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+
+            Spacer(minLength: 0)
+
+            Image(systemName: isSelected ? "checkmark" : "circle")
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(isSelected ? selectionBadgeForeground : palette.headerSubtext)
+                .frame(width: 16, height: 16)
+                .background(selectionBadgeBackground, in: Circle())
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: 44)
+        .padding(.horizontal, 10)
+        .foregroundStyle(palette.headerText)
+        .contentShape(Rectangle())
+        .onTapGesture(perform: action)
+        .glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(selectionFill)
+        )
+    }
+
+    private var palette: AppPalette {
+        AppPalette(colorScheme: colorScheme)
+    }
+
+    private var selectionFill: Color {
+        if !isSelected {
+            return .clear
+        }
+        return colorScheme == .dark
+            ? Color.white.opacity(0.10)
+            : Color.black.opacity(0.06)
+    }
+
     private var selectionBadgeBackground: Color {
         isSelected ? palette.star : Color.clear
     }
