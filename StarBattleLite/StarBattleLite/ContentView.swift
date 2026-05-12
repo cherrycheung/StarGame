@@ -23,17 +23,37 @@ private enum StarMode: Int {
     }
 }
 
+private enum HomePlayMode: String {
+    case solo
+    case challenge
+
+    var title: String {
+        switch self {
+        case .solo: return "Solo"
+        case .challenge: return "Challenge"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .solo: return "Play on your own"
+        case .challenge: return "Coming soon"
+        }
+    }
+}
+
 struct ContentView: View {
     @StateObject private var viewModel = GameViewModel()
     @Environment(\.colorScheme) private var colorScheme
     @State private var currentScreen: AppScreen = .home
     @State private var selectedMode: StarMode = .one
-    @State private var selectedBoardSize: PuzzleBoardSize = .six
+    @State private var selectedBoardSize: PuzzleBoardSize = .eight
     @State private var showSettings = false
     @State private var showRecords = false
     @State private var showSolvedCelebration = false
     @State private var pendingStartStyle: GameStyle?
     @State private var showSessionChoice = false
+    @State private var selectedPlayMode: HomePlayMode = .solo
 
     var body: some View {
         NavigationStack {
@@ -105,44 +125,49 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 20) {
             Spacer(minLength: 0)
 
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Star Battle")
-                    .font(.system(size: 36, weight: .bold, design: .rounded))
-                    .foregroundStyle(palette.headerText)
-                Text("Choose a mode and board size to start.")
-                    .font(.footnote)
-                    .foregroundStyle(palette.headerSubtext)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Star Battle")
+                        .font(.system(size: 36, weight: .bold, design: .rounded))
+                        .foregroundStyle(palette.headerText)
+                    Text("Pick a mode, choose a board, then decide how you want to play.")
+                        .font(.footnote)
+                        .foregroundStyle(palette.headerSubtext)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
 
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Mode")
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(palette.headerText)
+                Spacer()
 
                 HStack(spacing: 10) {
-                    ForEach([StarMode.one, StarMode.two], id: \.rawValue) { mode in
-                        SelectionChipButton(
-                            title: mode.title,
-                            subtitle: modeSubtitle(mode),
-                            isSelected: selectedMode == mode,
-                            action: {
-                                guard modeIsAvailable(mode) else { return }
-                                selectedMode = mode
-                            }
-                        )
+                    HomeIconButton(symbol: "medal.star.fill") {
+                        showRecords = true
+                    }
+                    HomeIconButton(symbol: "gearshape.fill") {
+                        showSettings = true
                     }
                 }
             }
 
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Board Size")
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(palette.headerText)
+            VStack(alignment: .leading, spacing: 16) {
+                HomeSectionCard(title: "Mode") {
+                    HStack(spacing: 10) {
+                        ForEach([StarMode.one, StarMode.two], id: \.rawValue) { mode in
+                            SelectionChipButton(
+                                title: mode.title,
+                                subtitle: modeSubtitle(mode),
+                                isSelected: selectedMode == mode,
+                                action: {
+                                    guard modeIsAvailable(mode) else { return }
+                                    selectedMode = mode
+                                }
+                            )
+                        }
+                    }
+                }
 
-                HStack(spacing: 10) {
-                    ForEach(boardSizeSlots.indices, id: \.self) { index in
-                        if let boardSize = boardSizeSlots[index] {
+                HomeSectionCard(title: "Board Size") {
+                    HStack(spacing: 10) {
+                        ForEach(visibleBoardSizes) { boardSize in
                             CompactSelectionChipButton(
                                 title: boardSize.title,
                                 isSelected: selectedBoardSize == boardSize,
@@ -151,12 +176,52 @@ struct ContentView: View {
                                 }
                             )
                             .frame(maxWidth: .infinity)
-                        } else {
-                            Color.clear
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 44)
-                                .allowsHitTesting(false)
-                                .accessibilityHidden(true)
+                        }
+                    }
+                }
+
+                HomeSectionCard(title: "Play Style") {
+                    HStack(spacing: 10) {
+                        SelectionChipButton(
+                            title: HomePlayMode.solo.title,
+                            subtitle: HomePlayMode.solo.subtitle,
+                            isSelected: selectedPlayMode == .solo,
+                            action: {
+                                selectedPlayMode = .solo
+                            }
+                        )
+
+                        SelectionChipButton(
+                            title: HomePlayMode.challenge.title,
+                            subtitle: HomePlayMode.challenge.subtitle,
+                            isSelected: selectedPlayMode == .challenge,
+                            action: {}
+                        )
+                        .opacity(0.55)
+                        .allowsHitTesting(false)
+                    }
+                }
+
+                HomeSectionCard(title: "Ready") {
+                    HStack(alignment: .center, spacing: 12) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(selectedPlayMode.title)
+                                .font(.headline.weight(.semibold))
+                                .foregroundStyle(palette.headerText)
+                            Text("\(selectedMode.title) • \(selectedBoardSize.title)")
+                                .font(.subheadline)
+                                .foregroundStyle(palette.headerSubtext)
+                        }
+
+                        Spacer()
+
+                        VStack(alignment: .trailing, spacing: 4) {
+                            Text("Completed")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(palette.headerSubtext)
+                            Text("\(viewModel.solvedCount(for: selectedBoardSize, starsPerUnit: selectedMode.rawValue))/\(PuzzleLibrary.puzzleCount(for: .easy, boardSize: selectedBoardSize, starsPerUnit: selectedMode.rawValue))")
+                                .font(.subheadline.weight(.bold))
+                                .foregroundStyle(palette.headerText)
                         }
                     }
                 }
@@ -166,44 +231,18 @@ struct ContentView: View {
                 handleStartButton()
             } label: {
                 Label(homeActionTitle, systemImage: homeActionSymbol)
-                    .font(.subheadline.weight(.semibold))
+                    .font(.footnote.weight(.semibold))
                     .foregroundStyle(startButtonForeground)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
+                    .padding(.vertical, 13)
             }
             .buttonStyle(.plain)
-            .glassEffect(.regular.tint(startButtonBackground).interactive(), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-            .shadow(color: startButtonShadow, radius: 18, y: 10)
+            .glassEffect(.regular.tint(startButtonBackground).interactive(), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .shadow(color: startButtonShadow, radius: 14, y: 8)
             .disabled(
                 PuzzleLibrary.puzzleCount(for: .easy, boardSize: selectedBoardSize, starsPerUnit: selectedMode.rawValue) == 0 ||
                 !modeIsAvailable(selectedMode)
             )
-
-            HStack(spacing: 12) {
-                Button {
-                    showRecords = true
-                } label: {
-                    Label("Records", systemImage: "medal.star.fill")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(palette.headerText)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                }
-                .buttonStyle(.plain)
-                .glassEffect(.regular.interactive())
-
-                Button {
-                    showSettings = true
-                } label: {
-                    Label("Settings", systemImage: "gearshape.fill")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(palette.headerText)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                }
-                .buttonStyle(.plain)
-                .glassEffect(.regular.interactive())
-            }
 
             Spacer(minLength: 0)
         }
@@ -329,11 +368,11 @@ struct ContentView: View {
     }
 
     private var homeActionTitle: String {
-        "Start Game"
+        selectedPlayMode == .solo ? "Start Solo Game" : "Challenge Someone"
     }
 
     private var homeActionSymbol: String {
-        "play.fill"
+        selectedPlayMode == .solo ? "play.fill" : "person.2.fill"
     }
 
     private var selectedStyle: GameStyle {
@@ -341,21 +380,13 @@ struct ContentView: View {
     }
 
     private var visiblePickerBoardSizes: [PuzzleBoardSize] {
-        [.six, .eight, .ten]
+        [.eight, .ten]
     }
 
     private var visibleBoardSizes: [PuzzleBoardSize] {
         visiblePickerBoardSizes.filter {
             viewModel.availableBoardCounts(for: selectedMode.rawValue)[$0, default: 0] > 0
         }
-    }
-
-    private var boardSizeSlots: [PuzzleBoardSize?] {
-        let sizes = visibleBoardSizes.map(Optional.some)
-        if selectedMode == .two && sizes.count == 2 {
-            return sizes + [nil]
-        }
-        return sizes
     }
 
     private var startButtonBackground: Color {
@@ -490,7 +521,7 @@ private struct BestTimesSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     private var styles: [GameStyle] {
-        [PuzzleBoardSize.six, .eight, .ten].flatMap { boardSize in
+        [PuzzleBoardSize.eight, .ten].flatMap { boardSize in
             [1, 2].map { GameStyle(boardSize: boardSize, starsPerUnit: $0) }
         }
     }
@@ -663,10 +694,83 @@ private struct BoardView: View {
     }
 
     private func regionColor(for regionID: String) -> Color {
-        let hash = regionID.unicodeScalars.reduce(0) { partial, scalar in
-            ((partial * 31) + Int(scalar.value)) & 0x7fffffff
+        let colorsByRegion = regionColorsByID()
+        if let color = colorsByRegion[regionID] {
+            return color
         }
-        return palette.regionPalette[hash % palette.regionPalette.count]
+        return palette.cellBackground
+    }
+
+    private func regionColorsByID() -> [String: Color] {
+        let regions = viewModel.currentPuzzle.regions
+        var adjacency = [String: Set<String>]()
+
+        for row in 0..<regions.count {
+            for column in 0..<regions[row].count {
+                let current = regions[row][column]
+                adjacency[current, default: []] = adjacency[current, default: []]
+
+                if row + 1 < regions.count {
+                    let below = regions[row + 1][column]
+                    if below != current {
+                        adjacency[current, default: []].insert(below)
+                        adjacency[below, default: []].insert(current)
+                    }
+                }
+
+                if column + 1 < regions[row].count {
+                    let trailing = regions[row][column + 1]
+                    if trailing != current {
+                        adjacency[current, default: []].insert(trailing)
+                        adjacency[trailing, default: []].insert(current)
+                    }
+                }
+            }
+        }
+
+        let orderedRegions = adjacency.keys.sorted {
+            let lhsDegree = adjacency[$0]?.count ?? 0
+            let rhsDegree = adjacency[$1]?.count ?? 0
+            if lhsDegree != rhsDegree {
+                return lhsDegree > rhsDegree
+            }
+            return $0 < $1
+        }
+
+        let uniqueColors = generatedUniqueRegionColors(count: orderedRegions.count)
+        var assignments = [String: Int]()
+        var remainingIndices = Set(uniqueColors.indices)
+
+        for region in orderedRegions {
+            let usedNeighborIndices = Set((adjacency[region] ?? []).compactMap { neighbor in
+                assignments[neighbor]
+            })
+
+            let selectedIndex = remainingIndices
+                .sorted()
+                .first { !usedNeighborIndices.contains($0) } ?? remainingIndices.sorted().first ?? 0
+
+            assignments[region] = selectedIndex
+            remainingIndices.remove(selectedIndex)
+        }
+
+        return assignments.reduce(into: [String: Color]()) { partialResult, entry in
+            partialResult[entry.key] = uniqueColors[entry.value]
+        }
+    }
+
+    private func generatedUniqueRegionColors(count: Int) -> [Color] {
+        guard count > 0 else { return [] }
+
+        let hueOffset = 0.08
+        let saturation = colorScheme == .dark ? 0.58 : 0.34
+        let brightness = colorScheme == .dark ? 0.66 : 0.96
+        let opacity = colorScheme == .dark ? 0.88 : 1.0
+
+        return (0..<count).map { index in
+            let hue = (Double(index) / Double(count) + hueOffset).truncatingRemainder(dividingBy: 1)
+            return Color(hue: hue, saturation: saturation, brightness: brightness, opacity: opacity)
+        }
     }
 
     private func position(for location: CGPoint, boardSide: CGFloat, size: Int) -> CellPosition? {
@@ -840,6 +944,55 @@ private struct SolvedActionButtonStyle: ButtonStyle {
                     }
                 }
             )
+    }
+}
+
+private struct HomeSectionCard<Content: View>: View {
+    @Environment(\.colorScheme) private var colorScheme
+    let title: String
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .textCase(.uppercase)
+                .tracking(0.8)
+                .foregroundStyle(palette.headerSubtext)
+
+            content
+        }
+        .padding(16)
+        .background(palette.headerCard, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .stroke(palette.headerBorder, lineWidth: 1)
+        }
+    }
+
+    private var palette: AppPalette {
+        AppPalette(colorScheme: colorScheme)
+    }
+}
+
+private struct HomeIconButton: View {
+    @Environment(\.colorScheme) private var colorScheme
+    let symbol: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.headline.weight(.bold))
+                .foregroundStyle(palette.headerText)
+                .frame(width: 42, height: 42)
+        }
+        .buttonStyle(.plain)
+        .glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    private var palette: AppPalette {
+        AppPalette(colorScheme: colorScheme)
     }
 }
 

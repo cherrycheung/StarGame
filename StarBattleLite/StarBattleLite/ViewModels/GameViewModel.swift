@@ -51,7 +51,7 @@ final class GameViewModel: ObservableObject {
     @Published private(set) var config: GameConfig
     @Published private(set) var puzzles: [Puzzle]
     @Published private(set) var puzzleIndex: Int = 0
-    @Published private(set) var currentBoardSize: PuzzleBoardSize = .six
+    @Published private(set) var currentBoardSize: PuzzleBoardSize = .eight
     @Published private(set) var currentDifficulty: PuzzleDifficulty = .easy
     @Published private(set) var boardState: [[CellState]]
     @Published var message: String = ""
@@ -73,7 +73,7 @@ final class GameViewModel: ObservableObject {
 
     init(
         config: GameConfig = .oneStar,
-        puzzles: [Puzzle] = PuzzleLibrary.puzzles(for: .easy, boardSize: .six, starsPerUnit: 1),
+        puzzles: [Puzzle] = PuzzleLibrary.puzzles(for: .easy, boardSize: .eight, starsPerUnit: 1),
         userDefaults: UserDefaults = .standard
     ) {
         self.userDefaults = userDefaults
@@ -85,7 +85,7 @@ final class GameViewModel: ObservableObject {
         self.solvedPuzzleIDs = Self.loadSolvedPuzzleIDs(from: userDefaults)
         let initialPuzzles = Self.orderedPuzzles(
             from: puzzles,
-            for: GameStyle(boardSize: .six, starsPerUnit: config.starsPerUnit),
+            for: GameStyle(boardSize: .eight, starsPerUnit: config.starsPerUnit),
             difficulty: .easy,
             userDefaults: userDefaults
         )
@@ -95,7 +95,7 @@ final class GameViewModel: ObservableObject {
             count: config.boardSize
         )
         if !restoreActiveSessionIfPossible() {
-            loadPuzzle(at: preferredStartIndex(for: .six))
+            loadPuzzle(at: preferredStartIndex(for: .eight))
         }
     }
 
