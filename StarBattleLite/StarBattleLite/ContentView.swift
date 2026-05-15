@@ -1,8 +1,8 @@
 import SwiftUI
 
-private enum AppScreen {
-    case home
-    case game
+private enum AppRootTab: Hashable {
+    case play
+    case challenge
 }
 
 private enum StarMode: Int {
@@ -23,29 +23,11 @@ private enum StarMode: Int {
     }
 }
 
-private enum HomePlayMode: String {
-    case solo
-    case challenge
-
-    var title: String {
-        switch self {
-        case .solo: return "Solo"
-        case .challenge: return "Challenge"
-        }
-    }
-
-    var subtitle: String {
-        switch self {
-        case .solo: return "Play on your own"
-        case .challenge: return "Coming soon"
-        }
-    }
-}
-
 struct ContentView: View {
     @StateObject private var viewModel = GameViewModel()
     @Environment(\.colorScheme) private var colorScheme
-    @State private var currentScreen: AppScreen = .home
+    @State private var selectedTab: AppRootTab = .play
+    @State private var showingGame = false
     @State private var selectedMode: StarMode = .one
     @State private var selectedBoardSize: PuzzleBoardSize = .eight
     @State private var showSettings = false
@@ -53,7 +35,6 @@ struct ContentView: View {
     @State private var showSolvedCelebration = false
     @State private var pendingStartStyle: GameStyle?
     @State private var showSessionChoice = false
-    @State private var selectedPlayMode: HomePlayMode = .solo
 
     var body: some View {
         NavigationStack {
@@ -66,10 +47,30 @@ struct ContentView: View {
                     )
                     .ignoresSafeArea()
 
-                    switch currentScreen {
-                    case .home:
-                        homeScreen
-                    case .game:
+                    VStack(spacing: 0) {
+                        topTabHeader
+                            .padding(.horizontal, 20)
+                            .padding(.top, 18)
+                            .padding(.bottom, 8)
+
+                        TabView(selection: $selectedTab) {
+                            homeScreen
+                                .tag(AppRootTab.play)
+                                .tabItem {
+                                    Label("Solo", systemImage: "person.fill")
+                                }
+
+                            challengeScreen
+                                .tag(AppRootTab.challenge)
+                                .tabItem {
+                                    Label("Challenge", systemImage: "person.2.fill")
+                                }
+                        }
+                    }
+                    .opacity(showingGame ? 0 : 1)
+                    .allowsHitTesting(!showingGame)
+
+                    if showingGame {
                         gameScreen(availableSize: geometry.size)
                     }
                 }
@@ -123,38 +124,19 @@ struct ContentView: View {
 
     private var homeScreen: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Spacer(minLength: 0)
-
-            HStack(alignment: .top, spacing: 12) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Star Battle")
-                        .font(.system(size: 36, weight: .bold, design: .rounded))
-                        .foregroundStyle(palette.headerText)
-                    Text("Pick a mode, choose a board, then decide how you want to play.")
-                        .font(.footnote)
+            VStack(alignment: .leading, spacing: 22) {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Star Mode")
+                        .font(.caption.weight(.semibold))
+                        .textCase(.uppercase)
+                        .tracking(0.8)
                         .foregroundStyle(palette.headerSubtext)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
 
-                Spacer()
-
-                HStack(spacing: 10) {
-                    HomeIconButton(symbol: "medal.star.fill") {
-                        showRecords = true
-                    }
-                    HomeIconButton(symbol: "gearshape.fill") {
-                        showSettings = true
-                    }
-                }
-            }
-
-            VStack(alignment: .leading, spacing: 16) {
-                HomeSectionCard(title: "Mode") {
-                    HStack(spacing: 10) {
+                    HStack(spacing: 12) {
                         ForEach([StarMode.one, StarMode.two], id: \.rawValue) { mode in
                             SelectionChipButton(
                                 title: mode.title,
-                                subtitle: modeSubtitle(mode),
+                                subtitle: modeInstruction(mode),
                                 isSelected: selectedMode == mode,
                                 action: {
                                     guard modeIsAvailable(mode) else { return }
@@ -165,11 +147,18 @@ struct ContentView: View {
                     }
                 }
 
-                HomeSectionCard(title: "Board Size") {
-                    HStack(spacing: 10) {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Board Size")
+                        .font(.caption.weight(.semibold))
+                        .textCase(.uppercase)
+                        .tracking(0.8)
+                        .foregroundStyle(palette.headerSubtext)
+
+                    HStack(spacing: 12) {
                         ForEach(visibleBoardSizes) { boardSize in
                             CompactSelectionChipButton(
                                 title: boardSize.title,
+                                subtitle: boardSizeSummary(boardSize),
                                 isSelected: selectedBoardSize == boardSize,
                                 action: {
                                     selectedBoardSize = boardSize
@@ -179,66 +168,20 @@ struct ContentView: View {
                         }
                     }
                 }
-
-                HomeSectionCard(title: "Play Style") {
-                    HStack(spacing: 10) {
-                        SelectionChipButton(
-                            title: HomePlayMode.solo.title,
-                            subtitle: HomePlayMode.solo.subtitle,
-                            isSelected: selectedPlayMode == .solo,
-                            action: {
-                                selectedPlayMode = .solo
-                            }
-                        )
-
-                        SelectionChipButton(
-                            title: HomePlayMode.challenge.title,
-                            subtitle: HomePlayMode.challenge.subtitle,
-                            isSelected: selectedPlayMode == .challenge,
-                            action: {}
-                        )
-                        .opacity(0.55)
-                        .allowsHitTesting(false)
-                    }
-                }
-
-                HomeSectionCard(title: "Ready") {
-                    HStack(alignment: .center, spacing: 12) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(selectedPlayMode.title)
-                                .font(.headline.weight(.semibold))
-                                .foregroundStyle(palette.headerText)
-                            Text("\(selectedMode.title) • \(selectedBoardSize.title)")
-                                .font(.subheadline)
-                                .foregroundStyle(palette.headerSubtext)
-                        }
-
-                        Spacer()
-
-                        VStack(alignment: .trailing, spacing: 4) {
-                            Text("Completed")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(palette.headerSubtext)
-                            Text("\(viewModel.solvedCount(for: selectedBoardSize, starsPerUnit: selectedMode.rawValue))/\(PuzzleLibrary.puzzleCount(for: .easy, boardSize: selectedBoardSize, starsPerUnit: selectedMode.rawValue))")
-                                .font(.subheadline.weight(.bold))
-                                .foregroundStyle(palette.headerText)
-                        }
-                    }
-                }
             }
 
             Button {
                 handleStartButton()
             } label: {
-                Label(homeActionTitle, systemImage: homeActionSymbol)
-                    .font(.footnote.weight(.semibold))
+                Label("Start Game", systemImage: homeActionSymbol)
+                    .font(.headline.weight(.semibold))
                     .foregroundStyle(startButtonForeground)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 13)
+                    .padding(.vertical, 16)
             }
             .buttonStyle(.plain)
-            .glassEffect(.regular.tint(startButtonBackground).interactive(), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-            .shadow(color: startButtonShadow, radius: 14, y: 8)
+            .glassEffect(.regular.tint(startButtonBackground).interactive(), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .shadow(color: startButtonShadow, radius: 16, y: 9)
             .disabled(
                 PuzzleLibrary.puzzleCount(for: .easy, boardSize: selectedBoardSize, starsPerUnit: selectedMode.rawValue) == 0 ||
                 !modeIsAvailable(selectedMode)
@@ -247,7 +190,69 @@ struct ContentView: View {
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 20)
-        .padding(.vertical, 24)
+        .padding(.top, 12)
+        .padding(.bottom, 24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    }
+
+    private var challengeScreen: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            HomeSectionCard(title: "Coming Soon") {
+                VStack(alignment: .leading, spacing: 14) {
+                    Text("Async 1v1 is the next step for this app.")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(palette.headerText)
+
+                    Text("You’ll be able to send the same puzzle to a friend, each solve on your own time, and let the app compare the finish times.")
+                        .font(.subheadline)
+                        .foregroundStyle(palette.bodySubtext)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        ChallengeFeatureRow(symbol: "paperplane.fill", text: "Send a challenge link")
+                        ChallengeFeatureRow(symbol: "square.grid.2x2.fill", text: "Play the exact same puzzle")
+                        ChallengeFeatureRow(symbol: "timer", text: "Compare finish times automatically")
+                    }
+                }
+            }
+
+            HomeSectionCard(title: "Preview") {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Challenge Mode")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(palette.headerText)
+
+                    Text("We’ll give this its own setup flow so it feels distinct from solo play.")
+                        .font(.subheadline)
+                        .foregroundStyle(palette.bodySubtext)
+
+                    HStack(spacing: 10) {
+                        ChallengePill(title: "Same Puzzle")
+                        ChallengePill(title: "Best Time Wins")
+                    }
+                }
+            }
+
+            Button {
+            } label: {
+                Label("Challenge Coming Soon", systemImage: "person.2.fill")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(startButtonForeground.opacity(0.92))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 13)
+            }
+            .buttonStyle(.plain)
+            .glassEffect(.regular.tint(startButtonBackground.opacity(0.82)).interactive(), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .shadow(color: startButtonShadow, radius: 14, y: 8)
+            .opacity(0.78)
+            .disabled(true)
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 12)
+        .padding(.bottom, 24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
     private func gameScreen(availableSize: CGSize) -> some View {
@@ -263,7 +268,7 @@ struct ContentView: View {
     private var gameHeader: some View {
         HStack(spacing: 12) {
             Button {
-                currentScreen = .home
+                showingGame = false
             } label: {
                 Image(systemName: "chevron.left")
                     .font(.headline.weight(.bold))
@@ -350,7 +355,8 @@ struct ContentView: View {
                     },
                     onHome: {
                         showSolvedCelebration = false
-                        currentScreen = .home
+                        showingGame = false
+                        selectedTab = .play
                     }
                 )
                 .transition(.scale.combined(with: .opacity))
@@ -368,11 +374,11 @@ struct ContentView: View {
     }
 
     private var homeActionTitle: String {
-        selectedPlayMode == .solo ? "Start Solo Game" : "Challenge Someone"
+        "Start Game"
     }
 
     private var homeActionSymbol: String {
-        selectedPlayMode == .solo ? "play.fill" : "person.2.fill"
+        "play.fill"
     }
 
     private var selectedStyle: GameStyle {
@@ -401,6 +407,30 @@ struct ContentView: View {
         palette.star.opacity(colorScheme == .dark ? 0.22 : 0.28)
     }
 
+    private var topTabHeader: some View {
+        HStack(alignment: .center, spacing: 12) {
+            Text("Star Battle")
+                .font(.system(size: 30, weight: .bold, design: .rounded))
+                .foregroundStyle(palette.headerAccent)
+
+            Spacer()
+
+            HStack(spacing: 10) {
+                if selectedTab == .play {
+                    HomeIconButton(symbol: "list.number") {
+                        showRecords = true
+                    }
+                }
+
+                HomeIconButton(symbol: "gearshape.fill") {
+                    showSettings = true
+                }
+            }
+        }
+        .frame(height: 60, alignment: .top)
+    }
+
+
     private func modeIsAvailable(_ mode: StarMode) -> Bool {
         viewModel.availableBoardCounts(for: mode.rawValue).values.contains { $0 > 0 }
     }
@@ -412,6 +442,19 @@ struct ContentView: View {
             return mode.subtitle
         }
         return availableSizes.joined(separator: " • ")
+    }
+
+    private func modeInstruction(_ mode: StarMode) -> String {
+        switch mode {
+        case .one:
+            return "1 in each row, column, region"
+        case .two:
+            return "2 in each row, column, region"
+        }
+    }
+
+    private func boardSizeSummary(_ boardSize: PuzzleBoardSize) -> String {
+        "\(viewModel.solvedCount(for: boardSize, starsPerUnit: selectedMode.rawValue))/\(PuzzleLibrary.puzzleCount(for: .easy, boardSize: boardSize, starsPerUnit: selectedMode.rawValue)) solved"
     }
 
     private func normalizeSelectedBoardSize() {
@@ -461,7 +504,7 @@ struct ContentView: View {
             difficulty: .easy,
             starsPerUnit: selectedMode.rawValue
         )
-        currentScreen = .game
+        showingGame = true
         pendingStartStyle = nil
     }
 
@@ -473,12 +516,13 @@ struct ContentView: View {
     private func startActiveSession(_ style: GameStyle) {
         selectedMode = style.starsPerUnit == 2 ? .two : .one
         selectedBoardSize = style.boardSize
+        selectedTab = .play
         viewModel.startNewSession(
             boardSize: style.boardSize,
             difficulty: .easy,
             starsPerUnit: style.starsPerUnit
         )
-        currentScreen = .game
+        showingGame = true
         pendingStartStyle = nil
     }
 
@@ -792,6 +836,7 @@ private struct AppPalette {
     let headerCard: Color
     let headerBorder: Color
     let headerText: Color
+    let headerAccent: Color
     let headerSubtext: Color
     let modeBadge: Color
     let cardBackground: Color
@@ -811,6 +856,7 @@ private struct AppPalette {
             headerCard = Color.white.opacity(0.08)
             headerBorder = Color.white.opacity(0.12)
             headerText = Color.white.opacity(0.96)
+            headerAccent = Color(red: 0.80, green: 0.72, blue: 0.40)
             headerSubtext = Color.white.opacity(0.72)
             modeBadge = Color.white.opacity(0.10)
             cardBackground = Color.white.opacity(0.08)
@@ -837,6 +883,7 @@ private struct AppPalette {
             headerCard = Color.white.opacity(0.82)
             headerBorder = Color.black.opacity(0.06)
             headerText = Color(red: 0.10, green: 0.13, blue: 0.18)
+            headerAccent = Color(red: 0.40, green: 0.28, blue: 0.04)
             headerSubtext = Color.black.opacity(0.60)
             modeBadge = Color.black.opacity(0.06)
             cardBackground = Color.white.opacity(0.84)
@@ -931,19 +978,15 @@ private struct SolvedActionButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.subheadline.weight(.semibold))
-            .foregroundStyle(prominent ? Color.black.opacity(0.85) : Color.white)
-            .frame(minWidth: 112)
-            .padding(.horizontal, 20)
-            .padding(.vertical, 14)
+            .foregroundStyle(prominent ? Color.black.opacity(0.88) : Color.white)
+            .frame(minWidth: 136)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 16)
             .background(
-                Group {
-                    if prominent {
-                        Capsule().fill(Color.white.opacity(configuration.isPressed ? 0.82 : 0.94))
-                    } else {
-                        Capsule().stroke(Color.white.opacity(configuration.isPressed ? 0.55 : 0.80), lineWidth: 1)
-                    }
-                }
+                Capsule()
+                    .fill(prominent ? Color.white.opacity(configuration.isPressed ? 0.88 : 0.96) : Color.white.opacity(configuration.isPressed ? 0.14 : 0.10))
             )
+            .glassEffect(.regular.interactive(), in: Capsule())
     }
 }
 
@@ -999,42 +1042,51 @@ private struct HomeIconButton: View {
 private struct SelectionChipButton: View {
     @Environment(\.colorScheme) private var colorScheme
     let title: String
-    let subtitle: String
+    let subtitle: String?
     let isSelected: Bool
     let action: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: subtitle == nil ? 0 : 4) {
             HStack(spacing: 8) {
-                Text(title)
-                    .font(.caption.weight(.semibold))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+                HStack(spacing: 6) {
+                    Text(starSymbols)
+                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .foregroundStyle(palette.star)
+
+                    Text(title)
+                        .font(.headline.weight(.bold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
                 Spacer(minLength: 0)
                 Image(systemName: isSelected ? "checkmark" : "circle")
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.system(size: 11, weight: .bold))
                     .foregroundStyle(isSelected ? selectionBadgeForeground : palette.headerSubtext)
-                    .frame(width: 18, height: 18)
+                    .frame(width: 22, height: 22)
                     .background(selectionBadgeBackground, in: Circle())
             }
 
-            Text(subtitle)
-                .font(.caption2)
-                .foregroundStyle(palette.bodySubtext)
-                .lineLimit(1)
-                .minimumScaleFactor(0.85)
+            if let subtitle {
+                Text(subtitle)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(palette.bodySubtext)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.9)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .frame(maxWidth: .infinity)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(minHeight: 66)
-        .padding(.horizontal, 12)
+        .frame(minHeight: subtitle == nil ? 64 : 74)
+        .padding(.horizontal, 14)
         .padding(.vertical, 10)
         .foregroundStyle(palette.headerText)
         .contentShape(Rectangle())
         .onTapGesture(perform: action)
-        .glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(selectionFill)
         )
     }
@@ -1051,6 +1103,77 @@ private struct SelectionChipButton: View {
             ? Color.white.opacity(0.10)
             : Color.black.opacity(0.06)
     }
+    private var selectionBadgeBackground: Color {
+        isSelected ? palette.star : Color.clear
+    }
+
+    private var selectionBadgeForeground: Color {
+        colorScheme == .dark ? Color.black.opacity(0.86) : Color.white
+    }
+
+    private var starSymbols: String {
+        let count = Int(title.prefix(1)) ?? 1
+        return String(repeating: "★", count: max(count, 1))
+    }
+}
+
+private struct CompactSelectionChipButton: View {
+    @Environment(\.colorScheme) private var colorScheme
+    let title: String
+    let subtitle: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 8) {
+                Text(title)
+                    .font(.headline.weight(.bold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+
+                Spacer(minLength: 0)
+
+                Image(systemName: isSelected ? "checkmark" : "circle")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(isSelected ? selectionBadgeForeground : palette.headerSubtext)
+                    .frame(width: 22, height: 22)
+                    .background(selectionBadgeBackground, in: Circle())
+            }
+
+            Text(subtitle)
+                .font(.caption2)
+                .foregroundStyle(palette.bodySubtext)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(minHeight: 68)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .foregroundStyle(palette.headerText)
+        .contentShape(Rectangle())
+        .onTapGesture(perform: action)
+        .glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(selectionFill)
+        )
+    }
+
+    private var palette: AppPalette {
+        AppPalette(colorScheme: colorScheme)
+    }
+
+    private var selectionFill: Color {
+        if !isSelected {
+            return .clear
+        }
+        return colorScheme == .dark
+            ? Color.white.opacity(0.10)
+            : Color.black.opacity(0.06)
+    }
+
     private var selectionBadgeBackground: Color {
         isSelected ? palette.star : Color.clear
     }
@@ -1060,59 +1183,44 @@ private struct SelectionChipButton: View {
     }
 }
 
-private struct CompactSelectionChipButton: View {
+private struct ChallengeFeatureRow: View {
     @Environment(\.colorScheme) private var colorScheme
-    let title: String
-    let isSelected: Bool
-    let action: () -> Void
+    let symbol: String
+    let text: String
 
     var body: some View {
-        HStack(spacing: 6) {
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
+        HStack(spacing: 10) {
+            Image(systemName: symbol)
+                .font(.subheadline.weight(.bold))
+                .foregroundStyle(palette.star)
+                .frame(width: 22)
 
-            Spacer(minLength: 0)
-
-            Image(systemName: isSelected ? "checkmark" : "circle")
-                .font(.system(size: 10, weight: .bold))
-                .foregroundStyle(isSelected ? selectionBadgeForeground : palette.headerSubtext)
-                .frame(width: 16, height: 16)
-                .background(selectionBadgeBackground, in: Circle())
+            Text(text)
+                .font(.subheadline)
+                .foregroundStyle(palette.headerText)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(height: 44)
-        .padding(.horizontal, 10)
-        .foregroundStyle(palette.headerText)
-        .contentShape(Rectangle())
-        .onTapGesture(perform: action)
-        .glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(selectionFill)
-        )
     }
 
     private var palette: AppPalette {
         AppPalette(colorScheme: colorScheme)
     }
+}
 
-    private var selectionFill: Color {
-        if !isSelected {
-            return .clear
-        }
-        return colorScheme == .dark
-            ? Color.white.opacity(0.10)
-            : Color.black.opacity(0.06)
+private struct ChallengePill: View {
+    @Environment(\.colorScheme) private var colorScheme
+    let title: String
+
+    var body: some View {
+        Text(title)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(palette.headerText)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .glassEffect(.regular.interactive(), in: Capsule())
     }
 
-    private var selectionBadgeBackground: Color {
-        isSelected ? palette.star : Color.clear
-    }
-
-    private var selectionBadgeForeground: Color {
-        colorScheme == .dark ? Color.black.opacity(0.86) : Color.white
+    private var palette: AppPalette {
+        AppPalette(colorScheme: colorScheme)
     }
 }
 
