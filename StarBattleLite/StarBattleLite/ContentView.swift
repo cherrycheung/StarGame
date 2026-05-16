@@ -170,22 +170,24 @@ struct ContentView: View {
                 }
             }
 
-            Button {
-                handleStartButton()
-            } label: {
+            let canStartGame =
+                PuzzleLibrary.puzzleCount(for: .easy, boardSize: selectedBoardSize, starsPerUnit: selectedMode.rawValue) > 0 &&
+                modeIsAvailable(selectedMode)
+
+            ZStack {
                 Label("Start Game", systemImage: homeActionSymbol)
                     .font(.headline.weight(.semibold))
-                    .foregroundStyle(startButtonForeground)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
+                    .foregroundStyle(canStartGame ? startButtonForeground : startButtonForeground.opacity(0.55))
+                    .frame(maxWidth: .infinity, minHeight: 56)
             }
-            .buttonStyle(.plain)
+            .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .onTapGesture {
+                guard canStartGame else { return }
+                handleStartButton()
+            }
             .glassEffect(.regular.tint(startButtonBackground).interactive(), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-            .shadow(color: startButtonShadow, radius: 16, y: 9)
-            .disabled(
-                PuzzleLibrary.puzzleCount(for: .easy, boardSize: selectedBoardSize, starsPerUnit: selectedMode.rawValue) == 0 ||
-                !modeIsAvailable(selectedMode)
-            )
+            .shadow(color: canStartGame ? startButtonShadow : startButtonShadow.opacity(0.45), radius: 16, y: 9)
+            .opacity(canStartGame ? 1 : 0.7)
 
             Spacer(minLength: 0)
         }
@@ -260,52 +262,36 @@ struct ContentView: View {
             gameHeader
             puzzleCard(availableWidth: availableSize.width)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 16)
         .frame(width: availableSize.width, height: availableSize.height, alignment: .top)
     }
 
     private var gameHeader: some View {
-        HStack(spacing: 12) {
-            Button {
-                showingGame = false
-            } label: {
-                Image(systemName: "chevron.left")
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(palette.headerText)
-                    .frame(width: 44, height: 44)
-            }
-            .buttonStyle(.plain)
-            .glassEffect(.regular.interactive())
+        HStack(alignment: .center, spacing: 12) {
+            Text("Star Battle")
+                .font(.system(size: 30, weight: .bold, design: .rounded))
+                .foregroundStyle(palette.headerAccent)
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Star Battle")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .foregroundStyle(palette.headerText)
+            VStack(alignment: .leading, spacing: 2) {
                 Text("\(selectedMode.title) • \(viewModel.currentBoardSize.title)")
-                    .font(.subheadline.weight(.semibold))
+                    .font(.caption.weight(.semibold))
                     .foregroundStyle(palette.headerSubtext)
             }
 
             Spacer()
 
-            Button {
-                showSettings = true
-            } label: {
-                Image(systemName: "gearshape.fill")
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(palette.headerText)
-                    .frame(width: 44, height: 44)
+            HStack(spacing: 10) {
+                HomeIconButton(symbol: "chevron.left") {
+                    showingGame = false
+                }
+
+                HomeIconButton(symbol: "gearshape.fill") {
+                    showSettings = true
+                }
             }
-            .buttonStyle(.plain)
-            .glassEffect(.regular.interactive())
         }
-        .padding(12)
-        .background(palette.headerCard, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(palette.headerBorder, lineWidth: 1)
-        }
+        .frame(height: 60, alignment: .top)
     }
 
     private func puzzleCard(availableWidth: CGFloat) -> some View {
@@ -335,7 +321,7 @@ struct ContentView: View {
             }
             .font(.subheadline.weight(.medium))
 
-            BoardView(viewModel: viewModel, availableWidth: availableWidth - 64)
+            BoardView(viewModel: viewModel, availableWidth: availableWidth - 24)
 
             if !viewModel.message.isEmpty {
                 Text(viewModel.message)
@@ -343,8 +329,7 @@ struct ContentView: View {
                     .foregroundStyle(palette.bodySubtext)
             }
         }
-        .padding(16)
-        .background(palette.cardBackground, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .padding(.top, 4)
         .overlay(alignment: .center) {
             if showSolvedCelebration {
                 SolvedOverlay(
@@ -509,8 +494,16 @@ struct ContentView: View {
     }
 
     private func startSelectedGameDiscardingActiveSession() {
+        let skippedPuzzleID = viewModel.activeSessionPuzzleID
         viewModel.discardActiveSession()
-        startSelectedGame()
+        viewModel.startNewSession(
+            boardSize: selectedBoardSize,
+            difficulty: .easy,
+            starsPerUnit: selectedMode.rawValue,
+            excludingPuzzleID: skippedPuzzleID
+        )
+        showingGame = true
+        pendingStartStyle = nil
     }
 
     private func startActiveSession(_ style: GameStyle) {
@@ -964,7 +957,9 @@ private struct SolvedOverlay: View {
                 Button("New Game", action: onNewGame)
                     .buttonStyle(SolvedActionButtonStyle(prominent: true))
             }
+            .frame(maxWidth: .infinity)
         }
+        .frame(maxWidth: 300)
         .padding(.horizontal, 22)
         .padding(.vertical, 20)
         .background(.black.opacity(0.82), in: RoundedRectangle(cornerRadius: 26, style: .continuous))
@@ -979,9 +974,9 @@ private struct SolvedActionButtonStyle: ButtonStyle {
         configuration.label
             .font(.subheadline.weight(.semibold))
             .foregroundStyle(prominent ? Color.black.opacity(0.88) : Color.white)
-            .frame(minWidth: 136)
-            .padding(.horizontal, 24)
-            .padding(.vertical, 16)
+            .frame(maxWidth: .infinity, minHeight: 48)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 12)
             .background(
                 Capsule()
                     .fill(prominent ? Color.white.opacity(configuration.isPressed ? 0.88 : 0.96) : Color.white.opacity(configuration.isPressed ? 0.14 : 0.10))

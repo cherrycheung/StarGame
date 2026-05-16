@@ -69,7 +69,26 @@ final class GameViewModel: ObservableObject {
     private var lastTapPosition: CellPosition?
     private var lastTapTime = Date.distantPast
     private var puzzleStartTime = Date()
+    private var lastHintKey: String?
+    private var lastHintStage: HintStage = .nudge
     private let userDefaults: UserDefaults
+
+    private enum HintStage {
+        case nudge
+        case explain
+        case reveal
+
+        var next: HintStage {
+            switch self {
+            case .nudge:
+                return .explain
+            case .explain:
+                return .reveal
+            case .reveal:
+                return .reveal
+            }
+        }
+    }
 
     init(
         config: GameConfig = .oneStar,
@@ -163,6 +182,10 @@ final class GameViewModel: ObservableObject {
         return GameStyle(boardSize: boardSize, starsPerUnit: snapshot.starsPerUnit)
     }
 
+    var activeSessionPuzzleID: String? {
+        loadActiveSession()?.puzzleID
+    }
+
     func discardActiveSession() {
         clearActiveSession()
     }
@@ -174,6 +197,7 @@ final class GameViewModel: ObservableObject {
 
         invalidCells.removeAll()
         hintCells.removeAll()
+        resetHintProgress()
         lastTapPosition = nil
         if autoMarkEnabled {
             applyAutoMarks()
@@ -188,6 +212,7 @@ final class GameViewModel: ObservableObject {
 
         invalidCells.removeAll()
         hintCells.removeAll()
+        resetHintProgress()
         lastTapPosition = nil
         updateSolvedState()
     }
@@ -207,6 +232,7 @@ final class GameViewModel: ObservableObject {
         boardState[position.row][position.column] = current == .marked ? .empty : .marked
         invalidCells.removeAll()
         hintCells.removeAll()
+        resetHintProgress()
         updateSolvedState()
         lastTapPosition = position
         lastTapTime = now
@@ -217,6 +243,7 @@ final class GameViewModel: ObservableObject {
         boardState[position.row][position.column] = .marked
         invalidCells.removeAll()
         hintCells.removeAll()
+        resetHintProgress()
         persistSessionIfNeeded()
     }
 
@@ -246,6 +273,7 @@ final class GameViewModel: ObservableObject {
         lastTapPosition = nil
         puzzleStartTime = Date()
         message = ""
+        resetHintProgress()
         clearActiveSession()
     }
 
@@ -255,8 +283,9 @@ final class GameViewModel: ObservableObject {
         loadPuzzle(at: nextIndex)
     }
 
-    func startNewSession(boardSize: PuzzleBoardSize, difficulty: PuzzleDifficulty, starsPerUnit: Int) {
-        if let snapshot = loadActiveSession(),
+    func startNewSession(boardSize: PuzzleBoardSize, difficulty: PuzzleDifficulty, starsPerUnit: Int, excludingPuzzleID: String? = nil) {
+        if excludingPuzzleID == nil,
+           let snapshot = loadActiveSession(),
            let snapshotSize = PuzzleBoardSize(rawValue: snapshot.boardSize),
            snapshotSize == boardSize,
            snapshot.starsPerUnit == starsPerUnit,
@@ -277,7 +306,7 @@ final class GameViewModel: ObservableObject {
             difficulty: difficulty,
             userDefaults: userDefaults
         )
-        loadPuzzle(at: preferredStartIndex(for: boardSize))
+        loadPuzzle(at: preferredStartIndex(for: boardSize, excludingPuzzleID: excludingPuzzleID))
     }
 
     func checkProgress() {
@@ -302,10 +331,19 @@ final class GameViewModel: ObservableObject {
 
         if let hint = nextHint() {
             hintCells = hint.cells
-            message = hint.message
+            let stage: HintStage
+            if lastHintKey == hint.key {
+                stage = lastHintStage.next
+            } else {
+                stage = .nudge
+            }
+            lastHintKey = hint.key
+            lastHintStage = stage
+            message = hint.message(for: stage)
             return
         }
 
+        resetHintProgress()
         message = "No clear deduction right now. Try checking rows and regions with the fewest open cells."
     }
 
@@ -316,6 +354,7 @@ final class GameViewModel: ObservableObject {
         hintCells.removeAll()
         canUndo = !history.isEmpty
         lastTapPosition = nil
+        resetHintProgress()
         let validation = validateBoard()
         status = validation.solved ? "Solved" : ""
         message = ""
@@ -335,6 +374,7 @@ final class GameViewModel: ObservableObject {
         lastTapPosition = nil
         puzzleStartTime = Date()
         message = ""
+        resetHintProgress()
         clearActiveSession()
     }
 
@@ -352,6 +392,27 @@ final class GameViewModel: ObservableObject {
         let solvedIDs = solvedPuzzleIDs[currentStyle] ?? []
         if let unsolvedIndex = puzzles.firstIndex(where: { !solvedIDs.contains($0.id) }) {
             return unsolvedIndex
+        }
+
+        return 0
+    }
+
+    private func preferredStartIndex(for boardSize: PuzzleBoardSize, excludingPuzzleID: String?) -> Int {
+        guard let excludingPuzzleID, !puzzles.isEmpty else {
+            return preferredStartIndex(for: boardSize)
+        }
+
+        let solvedIDs = solvedPuzzleIDs[currentStyle] ?? []
+        let unsolvedCandidates = puzzles.indices.filter {
+            !solvedIDs.contains(puzzles[$0].id) && puzzles[$0].id != excludingPuzzleID
+        }
+        if let choice = unsolvedCandidates.randomElement() {
+            return choice
+        }
+
+        let remainingCandidates = puzzles.indices.filter { puzzles[$0].id != excludingPuzzleID }
+        if let choice = remainingCandidates.randomElement() {
+            return choice
         }
 
         return 0
@@ -385,6 +446,7 @@ final class GameViewModel: ObservableObject {
                 recordSolvedTime(elapsed)
                 recordSolvedPuzzle()
             }
+            resetHintProgress()
             clearActiveSession()
         } else {
             status = ""
@@ -405,10 +467,16 @@ final class GameViewModel: ObservableObject {
         }
         invalidCells.removeAll()
         hintCells.removeAll()
+        resetHintProgress()
         if autoMarkEnabled {
             applyAutoMarks()
         }
         updateSolvedState()
+    }
+
+    private func resetHintProgress() {
+        lastHintKey = nil
+        lastHintStage = .nudge
     }
 
     private func applyAutoMarks() {
@@ -592,8 +660,22 @@ final class GameViewModel: ObservableObject {
     }
 
     private struct HintSuggestion {
+        let key: String
         let cells: Set<CellPosition>
-        let message: String
+        let nudge: String
+        let explanation: String
+        let reveal: String
+
+        func message(for stage: HintStage) -> String {
+            switch stage {
+            case .nudge:
+                return nudge
+            case .explain:
+                return explanation
+            case .reveal:
+                return reveal
+            }
+        }
     }
 
     private func nextHint() -> HintSuggestion? {
@@ -606,8 +688,11 @@ final class GameViewModel: ObservableObject {
                 .map(\.key)
             if regionCandidates.count == 1, let cell = regionCandidates.first {
                 return HintSuggestion(
+                    key: "region-\(regionID)-\(cell.row)-\(cell.column)",
                     cells: [cell],
-                    message: "This region has only one possible star left."
+                    nudge: "Focus on this region. One cell is standing out.",
+                    explanation: "Every other cell in this region is blocked, so only one legal star position remains.",
+                    reveal: "Place a star here next."
                 )
             }
         }
@@ -616,8 +701,11 @@ final class GameViewModel: ObservableObject {
             let rowCandidates = candidates.keys.filter { $0.row == row }
             if rowCandidates.count == 1, let cell = rowCandidates.first {
                 return HintSuggestion(
+                    key: "row-\(row)-\(cell.row)-\(cell.column)",
                     cells: [cell],
-                    message: "Row \(row + 1) has only one legal place for its star."
+                    nudge: "Take another look at row \(row + 1).",
+                    explanation: "Row \(row + 1) still needs a star, and this is its only legal spot.",
+                    reveal: "Place a star in row \(row + 1) here."
                 )
             }
         }
@@ -626,8 +714,11 @@ final class GameViewModel: ObservableObject {
             let columnCandidates = candidates.keys.filter { $0.column == column }
             if columnCandidates.count == 1, let cell = columnCandidates.first {
                 return HintSuggestion(
+                    key: "column-\(column)-\(cell.row)-\(cell.column)",
                     cells: [cell],
-                    message: "Column \(column + 1) has only one legal place for its star."
+                    nudge: "Check column \(column + 1) closely.",
+                    explanation: "Column \(column + 1) still needs a star, and every other cell is ruled out.",
+                    reveal: "Place a star in column \(column + 1) here."
                 )
             }
         }
@@ -637,9 +728,13 @@ final class GameViewModel: ObservableObject {
                 let position = CellPosition(row: row, column: column)
                 guard boardState[row][column] == .empty else { continue }
                 if !isLegalStarPosition(position) {
+                    let reason = blockedReason(for: position)
                     return HintSuggestion(
+                        key: "blocked-\(row)-\(column)",
                         cells: [position],
-                        message: "This cell can't hold a star. Mark it with an X."
+                        nudge: "This cell is more constrained than it looks.",
+                        explanation: reason,
+                        reveal: "Mark this cell with an X."
                     )
                 }
             }
@@ -683,6 +778,29 @@ final class GameViewModel: ObservableObject {
         }
 
         return true
+    }
+
+    private func blockedReason(for position: CellPosition) -> String {
+        if rowHasQuota(position.row) {
+            return "Row \(position.row + 1) already has all the stars it can hold, so this cell cannot be a star."
+        }
+
+        if columnHasQuota(position.column) {
+            return "Column \(position.column + 1) already has all the stars it can hold, so this cell cannot be a star."
+        }
+
+        let regionID = currentPuzzle.regions[position.row][position.column]
+        if regionHasQuota(regionID) {
+            return "This region already has all the stars it needs, so this cell must be marked with an X."
+        }
+
+        for star in starPositions {
+            if abs(star.row - position.row) <= 1 && abs(star.column - position.column) <= 1 {
+                return "A star already touches this cell, so placing another star here would break the no-touch rule."
+            }
+        }
+
+        return "This cell can’t legally hold a star."
     }
 
     private func saveLeaderboard() {
